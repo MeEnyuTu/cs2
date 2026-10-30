@@ -51,6 +51,7 @@ CBaseEntity
 #endif
 
 // C functions for external declarations that call the appropriate C++ methods
+
 #ifndef CBASE_DLLEXPORT
 #ifdef _WIN32
 #define CBASE_DLLEXPORT _declspec( dllexport )
@@ -63,6 +64,7 @@ CBaseEntity
 
 extern "C" CBASE_DLLEXPORT int GetEntityAPI( DLL_FUNCTIONS *pFunctionTable, int interfaceVersion );
 extern "C" CBASE_DLLEXPORT int GetEntityAPI2( DLL_FUNCTIONS *pFunctionTable, int *interfaceVersion );
+extern "C" CBASE_DLLEXPORT int GetNewDLLFunctions( NEW_DLL_FUNCTIONS *pFunctionTable, int *interfaceVersion );
 
 extern int DispatchSpawn( edict_t *pent );
 extern void DispatchKeyValue( edict_t *pentKeyvalue, KeyValueData *pkvd );
@@ -201,6 +203,7 @@ public:
 	virtual BOOL	IsNetClient( void ) { return FALSE; }
 	virtual const char *TeamID( void ) { return ""; }
 
+	virtual BOOL	IsDisc( void ) { return FALSE; };
 
 //	virtual void	SetActivator( CBaseEntity *pActivator ) {}
 	virtual CBaseEntity *GetNextTarget( void );
@@ -227,7 +230,7 @@ public:
 	};
 
 	// don't use this.
-#if defined(_MSC_VER) && _MSC_VER >= 1200 // only build this code if MSVC++ 6.0 or higher
+#if _MSC_VER >= 1200 // only build this code if MSVC++ 6.0 or higher
 	void operator delete(void *pMem, entvars_t *pev)
 	{
 		pev->flags |= FL_KILLME;
@@ -254,6 +257,16 @@ public:
 	int		IsDormant( void );
 	BOOL    IsLockedByMaster( void ) { return FALSE; }
 
+#ifdef _DEBUG
+	static CBaseEntity *Instance( edict_t *pent ) 
+	{ 
+		if ( !pent )
+			pent = ENT(0);
+		CBaseEntity *pEnt = (CBaseEntity *)GET_PRIVATE(pent); 
+		ASSERT(pEnt!=NULL); 
+		return pEnt; 
+	}
+#else
 	static CBaseEntity *Instance( edict_t *pent )
 	{ 
 		if ( !pent )
@@ -261,6 +274,7 @@ public:
 		CBaseEntity *pEnt = (CBaseEntity *)GET_PRIVATE(pent); 
 		return pEnt; 
 	}
+#endif
 
 	static CBaseEntity *Instance( entvars_t *pev ) { return Instance( ENT( pev ) ); }
 	static CBaseEntity *Instance( int eoffset) { return Instance( ENT( eoffset) ); }
@@ -343,11 +357,8 @@ public:
 	virtual	BOOL FVisible ( CBaseEntity *pEntity );
 	virtual	BOOL FVisible ( const Vector &vecOrigin );
 
-
-	// QUAKECLASSIC
-	BOOL	m_bAxHitMe;
-	void	Spawn_Telefog( Vector vecOrg, CBaseEntity *pOther );
-	Vector	m_vecTeleAngles;
+	// Last touched by Jump pad
+	float	m_flTouchedByJumpPad;
 };
 
 
@@ -606,8 +617,6 @@ public:
 #define DMG_SLOWFREEZE		(1 << 22)	// in a subzero freezer
 #define DMG_MORTAR			(1 << 23)	// Hit by air raid (done to distinguish grenade from mortar)
 
-#define DMG_IGNORE_MAXHEALTH (1<< 24)	// Used by TakeHealth only. Ignores the player's max health when healing.
-
 // these are the damage types that are allowed to gib corpses
 #define DMG_GIB_CORPSE		( DMG_CRUSH | DMG_FALL | DMG_BLAST | DMG_SONIC | DMG_CLUB )
 
@@ -789,17 +798,6 @@ public:
 	void Spawn( void );
 	void Precache( void );
 	void KeyValue( KeyValueData *pkvd );
+
+	int	 m_iArenaOff;
 };
-
-class CClientFog : public CBaseEntity
-{
-public:
-	void Spawn( void );
-	void KeyValue( KeyValueData *pkvd );
-
-	float m_iStartDist;
-	float m_iEndDist;
-};
-
-// QUAKECLASSIC
-extern const char *g_szDeathType;

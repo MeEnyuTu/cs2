@@ -23,7 +23,7 @@
 
 // Allow "DEBUG" in addition to default "_DEBUG"
 #ifdef _DEBUG
-#define DEBUG 1
+	#define DEBUG 1
 #endif
 
 // Silence certain warnings

@@ -80,7 +80,7 @@ public:
 
 #define WEAPON_SUIT				31	// ?????
 
-#define MAX_WEAPONS			257
+#define MAX_WEAPONS			32
 
 
 #define MAX_NORMAL_BATTERY	100
@@ -327,7 +327,7 @@ public:
 	virtual void RetireWeapon( void );
 	virtual BOOL ShouldWeaponIdle( void ) {return FALSE; };
 	virtual void Holster( int skiplocal = 0 );
-	virtual BOOL UseDecrement( void ) { return TRUE; };
+	virtual BOOL UseDecrement( void ) { return FALSE; };
 
 	int	PrimaryAmmoIndex(); 
 	int	SecondaryAmmoIndex(); 
@@ -347,8 +347,6 @@ public:
 	int		m_fInReload;										// Are we in the middle of a reload;
 
 	int		m_iDefaultAmmo;// how much ammo you get when you pick up this weapon as placed by a level designer.
-
-	bool	m_bPlayedIdleAnim;
 };
 
 
@@ -422,71 +420,32 @@ extern MULTIDAMAGE gMultiDamage;
 #define VECTOR_CONE_20DEGREES	Vector( 0.17365, 0.17365, 0.17365 )
 
 //=========================================================
-// CWeaponBox - a single entity that can store weapons
-// and ammo. 
-//=========================================================
-class CWeaponBox : public CBaseEntity
+class CGlock : public CBasePlayerWeapon
 {
-	void Precache( void );
-	void Spawn( void );
-	void Touch( CBaseEntity *pOther );
-	void KeyValue( KeyValueData *pkvd );
-	BOOL IsEmpty( void );
-	int  GiveAmmo( int iCount, const char *szName, int iMax, int *pIndex = NULL );
-	void SetObjectCollisionBox( void );
-
 public:
-	void EXPORT Kill ( void );
-	int		Save( CSave &save );
-	int		Restore( CRestore &restore );
-	static	TYPEDESCRIPTION m_SaveData[];
+	void Spawn( void );
+	void Precache( void );
+	int iItemSlot( void ) { return 2; }
+	int GetItemInfo(ItemInfo *p);
 
-	BOOL HasWeapon( CBasePlayerItem *pCheckItem );
-	BOOL PackWeapon( CBasePlayerItem *pWeapon );
-	BOOL PackAmmo( int iszName, int iCount );
+	void PrimaryAttack( void );
+	void SecondaryAttack( void );
+	void GlockFire( float flSpread, float flCycleTime, BOOL fUseAutoAim );
+	BOOL Deploy( void );
+	void Reload( void );
+	void WeaponIdle( void );
+
+	virtual BOOL UseDecrement( void )
+	{ 
+		return TRUE;
+	}
+
+private:
+	int m_iShell;
 	
-	CBasePlayerItem	*m_rgpPlayerItems[MAX_ITEM_TYPES];// one slot for each 
 
-	int m_rgiszAmmo[MAX_AMMO_SLOTS];// ammo names
-	int	m_rgAmmo[MAX_AMMO_SLOTS];// ammo quantities
-
-	int m_cAmmoTypes;// how many ammo types packed into this box (if packed by a level designer)
+	unsigned short m_usFireGlock1;
+	unsigned short m_usFireGlock2;
 };
-
-
-// QUAKECLASSIC
-void Q_RadiusDamage( CBaseEntity *pInflictor, CBaseEntity *pAttacker, float flDamage, CBaseEntity *pIgnore );
-
-class CQuakeRocket : public CBaseEntity
-{
-public:
-	void Spawn( void );
-	void Precache( void );
-	void Explode( void );
-
-	// Rocket funcs
-	static CQuakeRocket *CreateRocket( Vector vecOrigin, Vector vecAngles, CBaseEntity *pOwner );
-	void EXPORT RocketTouch( CBaseEntity *pOther );
-
-	// Grenade funcs
-	static CQuakeRocket *CreateGrenade( Vector vecOrigin, Vector vecAngles, CBaseEntity *pOwner );
-	void EXPORT GrenadeTouch( CBaseEntity *pOther );
-	void EXPORT GrenadeExplode( void );
-
-	int		m_iTrail;
-	float	m_flAttackFinished;
-};
-
-class CQuakeNail : public CBaseEntity
-{
-public:
-	void Spawn( void );
-	static  CQuakeNail *CreateNail( Vector vecOrigin, Vector vecAngles, CBaseEntity *pOwner );
-	static  CQuakeNail *CreateSuperNail( Vector vecOrigin, Vector vecAngles, CBaseEntity *pOwner );
-	void	EXPORT NailTouch( CBaseEntity *pOther );
-};
-
-extern char gszQ_DeathType[128];
-extern DLL_GLOBAL	short	g_sModelIndexNail;
 
 #endif // WEAPONS_H

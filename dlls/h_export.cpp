@@ -24,18 +24,17 @@
 #include "util.h"
 
 #include "cbase.h"
-#undef DLLEXPORT
-
-#ifdef _WIN32
-#define DLLEXPORT __stdcall
-#else
-#define DLLEXPORT __attribute__ ((visibility("default")))
-#endif
 
 // Holds engine functionality callbacks
 enginefuncs_t g_engfuncs;
 globalvars_t  *gpGlobals;
 
+#undef DLLEXPORT
+#ifdef _WIN32
+#define DLLEXPORT __stdcall
+#else
+#define DLLEXPORT __attribute__ ((visibility("default")))
+#endif
 
 #ifdef _WIN32
 
@@ -60,4 +59,3 @@ extern "C" void DLLEXPORT GiveFnptrsToDll(	enginefuncs_t* pengfuncsFromEngine, g
 	memcpy(&g_engfuncs, pengfuncsFromEngine, sizeof(enginefuncs_t));
 	gpGlobals = pGlobals;
 }
-

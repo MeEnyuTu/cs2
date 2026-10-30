@@ -59,22 +59,35 @@ LINK_ENTITY_TO_CLASS(info_null,CNullEntity);
 class CBaseDMStart : public CPointEntity
 {
 public:
+	void		Spawn( void );
 	void		KeyValue( KeyValueData *pkvd );
 	BOOL		IsTriggered( CBaseEntity *pEntity );
 
 private:
+	int			m_iPitch;
 };
 
 // These are the new entry points to entities. 
 LINK_ENTITY_TO_CLASS(info_player_deathmatch,CBaseDMStart);
 LINK_ENTITY_TO_CLASS(info_player_start,CPointEntity);
+LINK_ENTITY_TO_CLASS(info_player_spectator,CBaseDMStart);
 LINK_ENTITY_TO_CLASS(info_landmark,CPointEntity);
+
+void CBaseDMStart::Spawn( void )
+{
+	pev->angles.x = -m_iPitch;
+}
 
 void CBaseDMStart::KeyValue( KeyValueData *pkvd )
 {
 	if (FStrEq(pkvd->szKeyName, "master"))
 	{
 		pev->netname = ALLOC_STRING(pkvd->szValue);
+		pkvd->fHandled = TRUE;
+	}
+	else if (FStrEq(pkvd->szKeyName, "pitch"))
+	{
+		m_iPitch = atoi(pkvd->szValue);
 		pkvd->fHandled = TRUE;
 	}
 	else
@@ -204,7 +217,17 @@ void FireTargets( const char *targetName, CBaseEntity *pActivator, CBaseEntity *
 		if ( pTarget && !(pTarget->pev->flags & FL_KILLME) )	// Don't use dying ents
 		{
 			ALERT( at_aiconsole, "Found: %s, firing (%s)\n", STRING(pTarget->pev->classname), targetName );
-			pTarget->Use( pActivator, pCaller, useType, value );
+
+			// Discwar: Only fire ents that are in the same groupinfo as the activator
+			if ( pActivator && pActivator->pev->groupinfo && pTarget->pev->groupinfo )
+			{
+				if ( pActivator->pev->groupinfo & pTarget->pev->groupinfo )
+					pTarget->Use( pActivator, pCaller, useType, value );
+			}
+			else
+			{
+				pTarget->Use( pActivator, pCaller, useType, value );
+			}
 		}
 	}
 }
@@ -473,7 +496,7 @@ void CBaseToggle :: AngularMove( Vector vecDestAngle, float flSpeed )
 
 	// set nextthink to trigger a call to AngularMoveDone when dest is reached
 	pev->nextthink = pev->ltime + flTravelTime;
-	SetThink( &CBaseToggle::AngularMoveDone );
+	SetThink(  &CBaseToggle::AngularMoveDone );
 
 	// scale the destdelta vector by the time spent traveling to get velocity
 	pev->avelocity = vecDestDelta / flTravelTime;

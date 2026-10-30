@@ -21,11 +21,14 @@
 #include	"gamerules.h"
 #include	"game.h"
 
+void EntvarsKeyvalue( entvars_t *pev, KeyValueData *pkvd );
+
 extern "C" void PM_Move ( struct playermove_s *ppmove, int server );
 extern "C" void PM_Init ( struct playermove_s *ppmove  );
 extern "C" char PM_FindTextureType( const char *name );
 
-void EntvarsKeyvalue( entvars_t *pev, KeyValueData *pkvd );
+void OnFreeEntPrivateData(edict_s *pEdict);
+
 
 extern Vector VecBModelOrigin( entvars_t* pevBModel );
 extern DLL_GLOBAL Vector		g_vecAttackDir;
@@ -95,6 +98,14 @@ static DLL_FUNCTIONS gFunctionTable =
 	AllowLagCompensation,		//pfnAllowLagCompensation
 };
 
+NEW_DLL_FUNCTIONS gNewDLLFunctions =
+{
+	OnFreeEntPrivateData,		//pfnOnFreeEntPrivateData
+	GameDLLShutdown,			//pfnGameShutdown
+	ShouldCollide,				//pfnShouldCollide
+};
+
+
 static void SetObjectCollisionBox( entvars_t *pev );
 
 int GetEntityAPI( DLL_FUNCTIONS *pFunctionTable, int interfaceVersion )
@@ -121,6 +132,17 @@ int GetEntityAPI2( DLL_FUNCTIONS *pFunctionTable, int *interfaceVersion )
 	return TRUE;
 }
 
+int GetNewDLLFunctions(NEW_DLL_FUNCTIONS *pFunctionTable, int *interfaceVersion)
+{
+	if(!pFunctionTable || *interfaceVersion != NEW_DLL_FUNCTIONS_VERSION)
+	{
+		*interfaceVersion = NEW_DLL_FUNCTIONS_VERSION;
+		return FALSE;
+	}
+
+	memcpy(pFunctionTable, &gNewDLLFunctions, sizeof(gNewDLLFunctions));
+	return TRUE;
+}
 
 int DispatchSpawn( edict_t *pent )
 {
@@ -274,6 +296,13 @@ void DispatchSave( edict_t *pent, SAVERESTOREDATA *pSaveData )
 	}
 }
 
+void OnFreeEntPrivateData(edict_s *pEdict)
+{
+	if(pEdict && pEdict->pvPrivateData)
+	{
+		((CBaseEntity*)pEdict->pvPrivateData)->~CBaseEntity();
+	}
+}
 
 // Find the matching global entity.  Spit out an error if the designer made entities of
 // different classes with the same global name
@@ -519,7 +548,7 @@ int CBaseEntity :: TakeDamage( entvars_t* pevInflictor, entvars_t* pevAttacker, 
 	// (that is, no actual entity projectile was involved in the attack so use the shooter's origin). 
 	if ( pevAttacker == pevInflictor )	
 	{
-		vecTemp = pevAttacker->origin - ( VecBModelOrigin(pev) );
+		vecTemp = pevInflictor->origin - ( VecBModelOrigin(pev) );
 	}
 	else
 	// an actual missile was involved.

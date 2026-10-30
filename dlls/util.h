@@ -272,7 +272,7 @@ extern void			UTIL_BloodDecalTrace( TraceResult *pTrace, int bloodColor );
 extern void			UTIL_DecalTrace( TraceResult *pTrace, int decalNumber );
 extern void			UTIL_PlayerDecalTrace( TraceResult *pTrace, int playernum, int decalNumber, BOOL bIsCustom );
 extern void			UTIL_GunshotDecalTrace( TraceResult *pTrace, int decalNumber );
-extern void			UTIL_Sparks( const Vector &position );
+extern void			UTIL_Sparks( const Vector &position, edict_t * ed = NULL );
 extern void			UTIL_Ricochet( const Vector &position, float scale );
 extern void			UTIL_StringToVector( float *pVector, const char *pString );
 extern void			UTIL_StringToIntArray( int *pVector, int count, const char *pString );
@@ -285,9 +285,6 @@ extern char			*UTIL_VarArgs( const char *format, ... );
 extern void			UTIL_Remove( CBaseEntity *pEntity );
 extern BOOL			UTIL_IsValidEntity( edict_t *pent );
 extern BOOL			UTIL_TeamsMatch( const char *pTeamName1, const char *pTeamName2 );
-
-// create a TENT projectile on all clients
-extern void			UTIL_ClientProjectile( const Vector &vecOrigin, const Vector &vecVelocity, short sModelIndex, int iOwnerIndex, int iLife );
 
 // Use for ease-in, ease-out style interpolation (accel/decel)
 extern float		UTIL_SplineFraction( float value, float scale );
@@ -310,6 +307,7 @@ inline void			UTIL_CenterPrintAll( const char *msg_name, const char *param1 = NU
 class CBasePlayerItem;
 class CBasePlayer;
 extern BOOL UTIL_GetNextBestWeapon( CBasePlayer *pPlayer, CBasePlayerItem *pCurrentWeapon );
+
 
 // prints messages through the HUD
 extern void ClientPrint( entvars_t *client, int msg_dest, const char *msg_name, const char *param1 = NULL, const char *param2 = NULL, const char *param3 = NULL, const char *param4 = NULL );
@@ -419,31 +417,26 @@ extern DLL_GLOBAL int			g_Language;
 #define PUSH_BLOCK_ONLY_X	1
 #define PUSH_BLOCK_ONLY_Y	2
 
-// QUAKECLASSIC: Different player sizes
-//#define VEC_HULL_MIN		Vector(-16, -16, -36)
-//#define VEC_HULL_MAX		Vector( 16,  16,  36)
-#define VEC_HULL_MIN		Vector(-16, -16, -24)
-#define VEC_HULL_MAX		Vector(16, 16, 32)
-
+#define VEC_HULL_MIN		Vector(-16, -16, -36)
+#define VEC_HULL_MAX		Vector( 16,  16,  36)
 #define VEC_HUMAN_HULL_MIN	Vector( -16, -16, 0 )
 #define VEC_HUMAN_HULL_MAX	Vector( 16, 16, 72 )
 #define VEC_HUMAN_HULL_DUCK	Vector( 16, 16, 36 )
 
-#define VEC_VIEW			Vector( 0, 0, 18 )
+#define VEC_VIEW			Vector( 0, 0, 28 )
 
-#define VEC_DUCK_HULL_MIN		Vector(-16, -16, -18 )
-#define VEC_DUCK_HULL_MAX		Vector( 16,  16,  18)
-#define VEC_DUCK_VIEW			Vector( 0, 0, 12 )
+#define VEC_DUCK_HULL_MIN	Vector(-16, -16, -18 )
+#define VEC_DUCK_HULL_MAX	Vector( 16,  16,  18)
+#define VEC_DUCK_VIEW		Vector( 0, 0, 12 )
 
 #define SVC_TEMPENTITY		23
 #define SVC_INTERMISSION	30
 #define SVC_CDTRACK			32
 #define SVC_WEAPONANIM		35
 #define SVC_ROOMTYPE		37
-#define SVC_ADDANGLE	    38			// [vec3] add this angle to the view angle
-#define SVC_NEWUSERMSG      39
-#define	SVC_DIRECTOR		51
 
+// Added to stuff text to the clients
+#define SVC_STUFFTEXT		9			// [string] stuffed into client's console buffer
 
 // triggers
 #define	SF_TRIGGER_ALLOWMONSTERS	1// monsters allowed to fire this trigger
@@ -545,7 +538,6 @@ void EMIT_GROUPNAME_SUIT(edict_t *entity, const char *groupname);
 
 #define RANDOM_SOUND_ARRAY( array ) (array) [ RANDOM_LONG(0,ARRAYSIZE( (array) )-1) ]
 
-
 #define PLAYBACK_EVENT( flags, who, index ) PLAYBACK_EVENT_FULL( flags, who, index, 0, (float *)&g_vecZero, (float *)&g_vecZero, 0.0, 0.0, 0, 0, 0, 0 );
 #define PLAYBACK_EVENT_DELAY( flags, who, index, delay ) PLAYBACK_EVENT_FULL( flags, who, index, delay, (float *)&g_vecZero, (float *)&g_vecZero, 0.0, 0.0, 0, 0, 0, 0 );
 
@@ -572,32 +564,3 @@ int UTIL_SharedRandomLong( unsigned int seed, int low, int high );
 float UTIL_SharedRandomFloat( unsigned int seed, float low, float high );
 
 float UTIL_WeaponTimeBase( void );
-
-typedef enum {
-	RED = 1,
-	BLUE,
-	GREEN,
-	YELLOW,
-	WHITE
-} printcolor_t; 
-
-typedef enum {
-	F_IN_OUT,
-    CREDITS,
-	SCANOUT
-} printeffect_t; 
-
-typedef enum {
-
-	WIN_MSG,
-	CRITICAL,
-	INFO,
-	LEADER_HIT,
-	MISC_SHIT,
-	CHASECAM,
-	CHASECAM_TARGET,
-	NOTIFY,
-
-} effectchannel_t;
-
-extern void EffectPrint( CBasePlayer *pPlayer, int color, int effect, int channel, char *text );

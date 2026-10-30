@@ -1,6 +1,6 @@
 /***
 *
-*	Copyright (c) 1996-2002 Valve LLC. All rights reserved.
+*	Copyright (c) 1996-2002, Valve LLC. All rights reserved.
 *	
 *	This product contains software technology licensed from Id 
 *	Software, Inc. ("Id Technology").  Id Technology (c) 1996 Id Software, Inc. 
@@ -17,12 +17,9 @@
 #define GAME_H
 
 extern void GameDLLInit( void );
-
+extern void GameDLLShutdown( void );
 
 extern cvar_t	displaysoundlist;
-extern cvar_t	mapcyclefile;
-extern cvar_t	servercfgfile;
-extern cvar_t	lservercfgfile;
 
 // multiplayer server rules
 extern cvar_t	fraglimit;
@@ -37,6 +34,7 @@ extern cvar_t	decalfrequency;
 extern cvar_t	teamlist;
 extern cvar_t	teamoverride;
 extern cvar_t	defaultteam;
+extern cvar_t	allow_spectators;
 
 // Engine Cvars
 extern cvar_t	*g_psv_gravity;

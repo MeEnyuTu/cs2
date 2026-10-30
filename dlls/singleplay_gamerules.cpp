@@ -23,6 +23,7 @@
 #include	"gamerules.h"
 #include	"skill.h"
 #include	"items.h"
+#include	"discwar.h"
 
 extern DLL_GLOBAL CGameRules	*g_pGameRules;
 extern DLL_GLOBAL BOOL	g_fGameOver;
@@ -121,14 +122,8 @@ float CHalfLifeRules::FlPlayerFallDamage( CBasePlayer *pPlayer )
 //=========================================================
 void CHalfLifeRules :: PlayerSpawn( CBasePlayer *pPlayer )
 {
-	// Start with init ammoload
-	pPlayer->m_iAmmoShells = 25;
-
-	// Start with shotgun and axe
-	pPlayer->GiveNamedItem( "weapon_quakegun" );
-	pPlayer->m_iQuakeItems |= (IT_SHOTGUN | IT_AXE);
-	pPlayer->m_iQuakeWeapon = pPlayer->W_BestWeapon();
-	pPlayer->W_SetCurrentAmmo();
+	pPlayer->GiveNamedItem( "weapon_disc" );
+	pPlayer->GiveAmmo( MAX_DISCS, "disc", MAX_DISCS );
 }
 
 //=========================================================

@@ -24,18 +24,6 @@
 #include	"teamplay_gamerules.h"
 #include	"game.h"
 
-
-/*class CDMCGameMgrHelper : public IVoiceGameMgrHelper
-{
-public:
-	virtual bool		ComparePlayerTeams(CBasePlayer *pPlayer1, CBasePlayer *pPlayer2)
-	{
-		return true;
-	}
-};
-static CDMCGameMgrHelper g_GameMgrHelper;*/
-
-
 static char team_names[MAX_TEAMS][MAX_TEAMNAME_LENGTH];
 static int team_scores[MAX_TEAMS];
 static int num_teams = 0;
@@ -44,8 +32,6 @@ extern DLL_GLOBAL BOOL		g_fGameOver;
 
 CHalfLifeTeamplay :: CHalfLifeTeamplay()
 {
-//	m_VoiceGameMgr.Init(&g_GameMgrHelper, VGMode(HearPVS), gpGlobals->maxClients);
-
 	m_DisableDeathMessages = FALSE;
 	m_DisableDeathPenalty = FALSE;
 
@@ -80,26 +66,21 @@ CHalfLifeTeamplay :: CHalfLifeTeamplay()
 	RecountTeams();
 }
 
-BOOL CHalfLifeTeamplay::ClientConnected( edict_t *pEntity, const char *pszName, const char *pszAddress, char szRejectReason[ 128 ] )
-{
-//	m_VoiceGameMgr.ClientConnected(pEntity);
-
-	return CHalfLifeMultiplay::ClientConnected(pEntity, pszName, pszAddress, szRejectReason);
-}
-
-
 extern cvar_t timeleft, fragsleft;
+
+#include "voice_gamemgr.h"
+extern CVoiceGameMgr	g_VoiceGameMgr;
 
 void CHalfLifeTeamplay :: Think ( void )
 {
-//	m_VoiceGameMgr.Update(gpGlobals->frametime);
-
 	///// Check game rules /////
 	static int last_frags;
 	static int last_time;
 
 	int frags_remaining = 0;
 	int time_remaining = 0;
+
+	g_VoiceGameMgr.Update(gpGlobals->frametime);
 
 	if ( g_fGameOver )   // someone else quit the game already
 	{
@@ -164,8 +145,8 @@ void CHalfLifeTeamplay :: Think ( void )
 //=========================================================
 BOOL CHalfLifeTeamplay :: ClientCommand( CBasePlayer *pPlayer, const char *pcmd )
 {
-//	if(m_VoiceGameMgr.ClientCommand(pPlayer, pcmd))
-//		return TRUE;
+	if(g_VoiceGameMgr.ClientCommand(pPlayer, pcmd))
+		return TRUE;
 
 	if ( FStrEq( pcmd, "menuselect" ) )
 	{
@@ -338,6 +319,7 @@ void CHalfLifeTeamplay::ClientUserInfoChanged( CBasePlayer *pPlayer, char *infob
 		UTIL_SayText( text, pPlayer );
 		return;
 	}
+	
 	// notify everyone of the team change
 	sprintf( text, "* %s has changed to team \'%s\'\n", STRING(pPlayer->pev->netname), mdls );
 	UTIL_SayTextAll( text, pPlayer );
@@ -351,7 +333,7 @@ void CHalfLifeTeamplay::ClientUserInfoChanged( CBasePlayer *pPlayer, char *infob
 
 	ChangePlayerTeam( pPlayer, mdls, TRUE, TRUE );
 	// recound stuff
-	RecountTeams();
+	RecountTeams( TRUE );
 }
 
 extern int gmsgDeathMsg;
@@ -551,7 +533,7 @@ const char *CHalfLifeTeamplay::TeamWithFewestPlayers( void )
 
 //=========================================================
 //=========================================================
-void CHalfLifeTeamplay::RecountTeams( void )
+void CHalfLifeTeamplay::RecountTeams( bool bResendInfo )
 {
 	char	*pName;
 	char	teamlist[TEAMPLAY_TEAMLISTLENGTH];
@@ -609,6 +591,17 @@ void CHalfLifeTeamplay::RecountTeams( void )
 			if ( tm >= 0 )
 			{
 				team_scores[tm] += static_cast<int>(plr->pev->frags);
+			}
+
+			if ( bResendInfo ) //Someone's info changed, let's send the team info again.
+			{
+				if ( plr && IsValidTeam( plr->TeamID() ) )
+				{
+					MESSAGE_BEGIN( MSG_ALL, gmsgTeamInfo, NULL );
+						WRITE_BYTE( plr->entindex() );
+						WRITE_STRING( plr->TeamID() );
+					MESSAGE_END();
+				}
 			}
 		}
 	}

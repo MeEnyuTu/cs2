@@ -17,8 +17,6 @@
 #include "util.h"
 #include "game.h"
 
-// QUAKECLASSIC
-cvar_t	rj = {"rj", "0"};
 
 cvar_t	displaysoundlist = {"displaysoundlist","0"};
 
@@ -26,24 +24,28 @@ cvar_t	displaysoundlist = {"displaysoundlist","0"};
 cvar_t	fragsleft	= {"mp_fragsleft","0", FCVAR_SERVER | FCVAR_UNLOGGED };	  // Don't spam console/log files/users with this changing
 cvar_t	timeleft	= {"mp_timeleft","0" , FCVAR_SERVER | FCVAR_UNLOGGED };	  // "      "
 
+cvar_t  allow_spectators = { "allow_spectators", "1.0", FCVAR_SERVER };		// 0 prevents players from being spectators
+
+// discwar
+cvar_t	rc_rounds			= {"rc_rounds", "3",  FCVAR_SERVER | FCVAR_UNLOGGED };
+cvar_t	rc_playersperteam	= {"rc_playersperteam", "1",  FCVAR_SERVER | FCVAR_UNLOGGED };
+cvar_t	rc_arena			= {"rc_arena", "1",  FCVAR_SERVER | FCVAR_UNLOGGED };
+
 // multiplayer server rules
 cvar_t	teamplay	= {"mp_teamplay","0", FCVAR_SERVER };
-
 cvar_t	fraglimit	= {"mp_fraglimit","0", FCVAR_SERVER };
 cvar_t	timelimit	= {"mp_timelimit","0", FCVAR_SERVER };
 cvar_t	friendlyfire= {"mp_friendlyfire","0", FCVAR_SERVER };
 cvar_t	falldamage	= {"mp_falldamage","0", FCVAR_SERVER };
-cvar_t	weaponstay	= {"mp_weaponstay","1", FCVAR_SERVER };
+cvar_t	weaponstay	= {"mp_weaponstay","0", FCVAR_SERVER };
 cvar_t	forcerespawn= {"mp_forcerespawn","1", FCVAR_SERVER };
 cvar_t	flashlight	= {"mp_flashlight","0", FCVAR_SERVER };
 cvar_t	aimcrosshair= {"mp_autocrosshair","1", FCVAR_SERVER };
 cvar_t	decalfrequency = {"decalfrequency","30", FCVAR_SERVER };
-cvar_t	teamlist = {"mp_teamlist","hgrunt;scientist", FCVAR_SERVER };
+cvar_t	teamlist = {"mp_teamlist","male", FCVAR_SERVER };
 cvar_t	teamoverride = {"mp_teamoverride","1" };
 cvar_t	defaultteam = {"mp_defaultteam","0" };
 cvar_t	allowmonsters={"mp_allowmonsters","0", FCVAR_SERVER };
-
-cvar_t  mp_chattime = {"mp_chattime","10", FCVAR_SERVER };
 
 cvar_t 	*g_psv_gravity = NULL;
 cvar_t	*g_psv_aim = NULL;
@@ -460,9 +462,6 @@ void GameDLLInit( void )
 	g_psv_aim = CVAR_GET_POINTER( "sv_aim" );
 	g_footsteps = CVAR_GET_POINTER( "mp_footsteps" );
 
-	// QUAKECLASSIC
-	CVAR_REGISTER (&rj);
-
 	CVAR_REGISTER (&displaysoundlist);
 
 	CVAR_REGISTER (&teamplay);
@@ -471,6 +470,13 @@ void GameDLLInit( void )
 
 	CVAR_REGISTER (&fragsleft);
 	CVAR_REGISTER (&timeleft);
+
+	CVAR_REGISTER( &allow_spectators );
+
+	// Discwar
+	CVAR_REGISTER (&rc_rounds);
+	CVAR_REGISTER (&rc_playersperteam);
+	CVAR_REGISTER (&rc_arena);
 
 	CVAR_REGISTER (&friendlyfire);
 	CVAR_REGISTER (&falldamage);
@@ -483,8 +489,6 @@ void GameDLLInit( void )
 	CVAR_REGISTER (&teamoverride);
 	CVAR_REGISTER (&defaultteam);
 	CVAR_REGISTER (&allowmonsters);
-
-	CVAR_REGISTER (&mp_chattime);
 
 // REGISTER CVARS FOR SKILL LEVEL STUFF
 	// Agrunt
@@ -890,3 +894,6 @@ void GameDLLInit( void )
 	SERVER_COMMAND( "exec skill.cfg\n" );
 }
 
+void GameDLLShutdown()
+{
+}

@@ -72,7 +72,7 @@ public:
 	virtual BOOL IsDeathmatch( void ) = 0;//is this a deathmatch game?
 	virtual BOOL IsTeamplay( void ) { return FALSE; };// is this deathmatch game being played with team rules?
 	virtual BOOL IsCoOp( void ) = 0;// is this a coop game?
-	virtual const char *GetGameDescription( void ) { return "DMC"; }  // this is the game name that gets seen in the server browser
+	virtual const char *GetGameDescription( void ) { return "Ricochet"; }  // this is the game name that gets seen in the server browser
 	
 // Client connection/disconnection
 	virtual BOOL ClientConnected( edict_t *pEntity, const char *pszName, const char *pszAddress, char szRejectReason[ 128 ] ) = 0;// a client just connected to the server (player hasn't spawned yet)
@@ -248,9 +248,6 @@ public:
 	virtual int PlayerRelationship( CBaseEntity *pPlayer, CBaseEntity *pTarget );
 };
 
-
-#include "voice_gamemgr.h"
-
 //=========================================================
 // CHalfLifeMultiplay - rules for the basic half life multiplayer
 // competition
@@ -259,8 +256,6 @@ class CHalfLifeMultiplay : public CGameRules
 {
 public:
 	CHalfLifeMultiplay();
-
-	virtual BOOL ClientCommand( CBasePlayer *pPlayer, const char *pcmd );
 
 // GR_Think
 	virtual void Think( void );
@@ -297,6 +292,7 @@ public:
 	virtual edict_t *GetPlayerSpawnSpot( CBasePlayer *pPlayer );
 
 	virtual BOOL AllowAutoTargetCrosshair( void );
+	virtual BOOL ClientCommand( CBasePlayer *pPlayer, const char *pcmd );
 
 // Client kills/scoring
 	virtual int IPointsForKill( CBasePlayer *pAttacker, CBasePlayer *pKilled );
@@ -352,19 +348,13 @@ public:
 
 	// Immediately end a multiplayer game
 	virtual void EndMultiplayerGame( void ) { GoToIntermission(); }
-	
-	CVoiceGameMgr	m_VoiceGameMgr;
 
 protected:
 	virtual void ChangeLevel( void );
 	virtual void GoToIntermission( void );
 	float m_flIntermissionEndTime;
-	float m_flIntermissionStartTime;
 	BOOL m_iEndIntermissionButtonHit;
 	void SendMOTDToClient( edict_t *client );
-
-	float m_flGameEndTime;
-	virtual void ClientUserInfoChanged( CBasePlayer *pPlayer, char *infobuffer );
 };
 
 extern DLL_GLOBAL CGameRules*	g_pGameRules;

@@ -24,6 +24,7 @@
 #include "util.h"
 #include "cbase.h"
 #include "nodes.h"
+#include "soundent.h"
 #include "client.h"
 #include "decals.h"
 #include "skill.h"
@@ -32,8 +33,10 @@
 #include "weapons.h"
 #include "gamerules.h"
 #include "teamplay_gamerules.h"
+#include "disc_arena.h"
 
 extern CGraph WorldGraph;
+extern CSoundEnt *pSoundEnt;
 
 extern CBaseEntity				*g_pLastSpawn;
 DLL_GLOBAL edict_t				*g_pBodyQueueHead;
@@ -41,7 +44,8 @@ CGlobalState					gGlobalState;
 extern DLL_GLOBAL	int			gDisplayTitle;
 
 extern void W_Precache(void);
-extern void	QuakeClassicPrecache( void );
+int g_iPlayersPerTeam = 0;
+int g_iMapTurnedOffArena = 0;
 
 //
 // This must match the list in util.h
@@ -229,6 +233,9 @@ static void InitBodyQue(void)
 //
 void CopyToBodyQue(entvars_t *pev) 
 {
+	// DISCWAR: No corpses
+	return;
+
 	if (pev->effects & EF_NODRAW)
 		return;
 
@@ -450,6 +457,7 @@ void ResetGlobalState( void )
 {
 	gGlobalState.ClearStates();
 	gInitHUD = TRUE;	// Init the HUD on a new game / load game
+	g_iPlayersPerTeam = 0;
 }
 
 // moved CWorld class definition to cbase.h
@@ -473,27 +481,27 @@ void CWorld :: Spawn( void )
 	g_fGameOver = FALSE;
 	Precache( );
 	g_flWeaponCheat = CVAR_GET_FLOAT( "sv_cheats" );  // Is the impulse 101 command allowed?
+
+	if ( m_iArenaOff )
+		g_iMapTurnedOffArena = TRUE;
+	else
+		g_iMapTurnedOffArena = FALSE;
 }
 
 void CWorld :: Precache( void )
 {
 	g_pLastSpawn = NULL;
-
-#if 1
+	
 	CVAR_SET_STRING("sv_gravity", "800"); // 67ft/sec
 	CVAR_SET_STRING("sv_stepsize", "18");
-#else
-	CVAR_SET_STRING("sv_gravity", "384"); // 32ft/sec
-	CVAR_SET_STRING("sv_stepsize", "24");
-#endif
+	CVAR_SET_STRING("room_type", "0"); // clear DSP
 
-	CVAR_SET_STRING("room_type", "0");// clear DSP
-
-	// QUAKECLASSIC
-	// Set various physics cvars to Quake's values
-	CVAR_SET_STRING("sv_friction", "4");
-	CVAR_SET_STRING("sv_maxspeed", "400");
-	CVAR_SET_STRING("sv_airaccelerate", "0.7");
+	// Create all the arenas
+	for (int i = 0; i < MAX_ARENAS; i++)
+	{
+		g_pArenaList[i] = GetClassPtr( ( CDiscArena *)NULL );
+		g_pArenaList[i]->Spawn();
+	}
 
 	// Set up game rules
 	if (g_pGameRules)
@@ -504,6 +512,17 @@ void CWorld :: Precache( void )
 	g_pGameRules = InstallGameRules( );
 
 	//!!!UNDONE why is there so much Spawn code in the Precache function? I'll just keep it here 
+
+	///!!!LATER - do we want a sound ent in deathmatch? (sjb)
+	//pSoundEnt = CBaseEntity::Create( "soundent", g_vecZero, g_vecZero, edict() );
+	pSoundEnt = GetClassPtr( ( CSoundEnt *)NULL );
+	pSoundEnt->Spawn();
+
+	if ( !pSoundEnt )
+	{
+		ALERT ( at_console, "**COULD NOT CREATE SOUNDENT**\n" );
+	}
+
 	InitBodyQue();
 	
 // init sentence group playback stuff from sentences.txt.
@@ -523,9 +542,6 @@ void CWorld :: Precache( void )
 
 	ClientPrecache();
 
-	// QUAKECLASSIC
-	QuakeClassicPrecache();
-
 // sounds used from C physics code
 	PRECACHE_SOUND("common/null.wav");				// clears sound channels
 
@@ -534,6 +550,14 @@ void CWorld :: Precache( void )
 
 	PRECACHE_SOUND( "common/bodydrop3.wav" );// dead bodies hitting the ground (animation events)
 	PRECACHE_SOUND( "common/bodydrop4.wav" );
+
+	PRECACHE_SOUND( "r_tele1.wav" );	// respawn sound
+	PRECACHE_SOUND( "scream1.wav" );	// falling scream sound
+	PRECACHE_SOUND( "scream2.wav" );	// falling scream sound
+	PRECACHE_SOUND( "scream3.wav" );	// falling scream sound
+	PRECACHE_SOUND( "decap.wav" );		// decapitation sound
+	PRECACHE_SOUND( "shatter.wav" );	// freeze decapitation sound
+	PRECACHE_MODEL( "models/head.mdl" ); // head
 	
 	g_Language = (int)CVAR_GET_FLOAT( "sv_language" );
 	if ( g_Language == LANGUAGE_GERMAN )
@@ -630,30 +654,24 @@ void CWorld :: Precache( void )
 	else
 		CVAR_SET_FLOAT( "sv_zmax", 4096 );
 
-	// QUAKECLASSIC: No Fades
-	/*
 	if ( pev->netname )
 	{
 		ALERT( at_aiconsole, "Chapter title: %s\n", STRING(pev->netname) );
 		CBaseEntity *pEntity = CBaseEntity::Create( "env_message", g_vecZero, g_vecZero, NULL );
 		if ( pEntity )
 		{
-			pEntity->SetThink( SUB_CallUseToggle );
+			pEntity->SetThink( &CBaseEntity::SUB_CallUseToggle );
 			pEntity->pev->message = pev->netname;
 			pev->netname = 0;
 			pEntity->pev->nextthink = gpGlobals->time + 0.3;
 			pEntity->pev->spawnflags = SF_MESSAGE_ONCE;
 		}
 	}
-	*/
 
-	// QUAKECLASSIC: No Darkness
-	/*
 	if ( pev->spawnflags & SF_WORLD_DARK )
 		CVAR_SET_FLOAT( "v_dark", 1.0 );
 	else
 		CVAR_SET_FLOAT( "v_dark", 0.0 );
-	*/
 
 	if ( pev->spawnflags & SF_WORLD_TITLE )
 		gDisplayTitle = TRUE;		// display the game title if this key is set
@@ -668,6 +686,10 @@ void CWorld :: Precache( void )
 	{
 		CVAR_SET_FLOAT( "mp_defaultteam", 0 );
 	}
+
+	// Discwar
+	if ( g_iPlayersPerTeam < 1 )
+		g_iPlayersPerTeam = static_cast<int>(CVAR_GET_FLOAT("rc_playersperteam"));
 }
 
 
@@ -740,6 +762,20 @@ void CWorld :: KeyValue( KeyValueData *pkvd )
 		}
 		pkvd->fHandled = TRUE;
 	}
+
+	// Discwar
+	else if ( FStrEq(pkvd->szKeyName, "playersperteam") )
+	{
+		g_iPlayersPerTeam = atoi(pkvd->szValue);
+		pkvd->fHandled = TRUE;
+	}
+	else if ( FStrEq(pkvd->szKeyName, "no_arena") )
+	{
+		if ( atoi(pkvd->szValue) )
+			m_iArenaOff = TRUE;
+		pkvd->fHandled = TRUE;
+	}
+
 	else
 		CBaseEntity::KeyValue( pkvd );
 }

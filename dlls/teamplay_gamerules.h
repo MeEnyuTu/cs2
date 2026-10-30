@@ -1,6 +1,6 @@
 /***
 *
-*	Copyright (c) 1996-2002, Valve LLC. All rights reserved.
+*	Copyright (c) 1999, 2000 Valve LLC. All rights reserved.
 *	
 *	This product contains software technology licensed from Id 
 *	Software, Inc. ("Id Technology").  Id Technology (c) 1996 Id Software, Inc. 
@@ -16,8 +16,6 @@
 // teamplay_gamerules.h
 //
 
-#include "voice_gamemgr.h"
-
 #define MAX_TEAMNAME_LENGTH	16
 #define MAX_TEAMS			32
 
@@ -28,7 +26,6 @@ class CHalfLifeTeamplay : public CHalfLifeMultiplay
 public:
 	CHalfLifeTeamplay();
 
-	virtual BOOL ClientConnected( edict_t *pEntity, const char *pszName, const char *pszAddress, char szRejectReason[ 128 ] );
 	virtual BOOL ClientCommand( CBasePlayer *pPlayer, const char *pcmd );
 	virtual void ClientUserInfoChanged( CBasePlayer *pPlayer, char *infobuffer );
 	virtual BOOL IsTeamplay( void );
@@ -49,10 +46,8 @@ public:
 	const char *SetDefaultPlayerTeam( CBasePlayer *pPlayer );
 	virtual void ChangePlayerTeam( CBasePlayer *pPlayer, const char *pTeamName, BOOL bKill, BOOL bGib );
 
-	CVoiceGameMgr	m_VoiceGameMgr;
-
 private:
-	void RecountTeams( void );
+	void RecountTeams( bool bResendInfo = FALSE );
 	const char *TeamWithFewestPlayers( void );
 
 	BOOL m_DisableDeathMessages;
