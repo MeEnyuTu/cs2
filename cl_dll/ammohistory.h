@@ -1,6 +1,6 @@
 /***
 *
-*	Copyright (c) 1999, Valve LLC. All rights reserved.
+*	Copyright (c) 1996-2002, Valve LLC. All rights reserved.
 *	
 *	This product contains software technology licensed from Id 
 *	Software, Inc. ("Id Technology").  Id Technology (c) 1996 Id Software, Inc. 
@@ -17,7 +17,7 @@
 //
 
 // this is the max number of items in each bucket
-#define MAX_WEAPON_POSITIONS		MAX_WEAPON_SLOTS
+#define MAX_WEAPON_POSITIONS		1
 
 class WeaponsResource
 {
@@ -55,12 +55,12 @@ public:
 
 	void PickupWeapon( WEAPON *wp )
 	{
-		rgSlots[ wp->iSlot ][ wp->iSlotPos ] = wp;
+		rgSlots[ wp->iSlot ][ 0 ] = wp;
 	}
 
 	void DropWeapon( WEAPON *wp )
 	{
-		rgSlots[ wp->iSlot ][ wp->iSlotPos ] = NULL;
+		rgSlots[ wp->iSlot ][ 0 ] = NULL;
 	}
 
 	void DropAllWeapons( void )
@@ -83,13 +83,14 @@ public:
 	int HasAmmo( WEAPON *p );
 
 ///// AMMO /////
-	AMMO GetAmmo( int iId ) { return riAmmo[ iId ]; }
+	AMMO GetAmmo( int iId ) { return iId; }
 
 	void SetAmmo( int iId, int iCount ) { riAmmo[ iId ] = iCount;	}
 
 	int CountAmmo( int iId );
 
 	HLSPRITE* GetAmmoPicFromWeapon( int iAmmoId, wrect_t& rect );
+
 };
 
 extern WeaponsResource gWR;

@@ -1,6 +1,6 @@
 /***
 *
-*	Copyright (c) 1999, Valve LLC. All rights reserved.
+*	Copyright (c) 1996-2002, Valve LLC. All rights reserved.
 *	
 *	This product contains software technology licensed from Id 
 *	Software, Inc. ("Id Technology").  Id Technology (c) 1996 Id Software, Inc. 
@@ -25,7 +25,6 @@
 #include "hud.h"
 #include "cl_util.h"
 #include "parsemsg.h"
-#include "vgui_TeamFortressViewport.h"
 #include <string.h>
 
 
@@ -170,14 +169,68 @@ void CHudHealth::GetPainColor( int &r, int &g, int &b )
 
 int CHudHealth::Draw(float flTime)
 {
-	// No Health in Discwar
+	int r, g, b;
+	int a = 0, x, y;
+	int HealthWidth;
+
+//	if (m_iHealth <= 0)
+//		return 1;
+
 	if ( gHUD.m_iHideHUDDisplay & HIDEHUD_HEALTH )
 		return 1;
 
 	if ( !m_hSprite )
 		m_hSprite = LoadSprite(PAIN_NAME);
+	
+	// Has health changed? Flash the health #
+	if (m_fFade)
+	{
+		m_fFade -= (gHUD.m_flTimeDelta * 20);
+		if (m_fFade <= 0)
+		{
+			a = MIN_ALPHA;
+			m_fFade = 0;
+		}
 
-	return DrawDamage(flTime);
+		// Fade the health number back to dim
+
+		a = MIN_ALPHA +  (m_fFade/FADE_TIME) * 128;
+
+	}
+	else
+		a = MIN_ALPHA;
+
+	// If health is getting low, make it bright red
+	if (m_iHealth <= 15)
+		a = 255;
+		
+	GetPainColor( r, g, b );
+	ScaleColors(r, g, b, a );
+
+	// Only draw health if we have the suit.
+	{
+		HealthWidth = gHUD.GetSpriteRect(gHUD.m_HUD_number_0).right - gHUD.GetSpriteRect(gHUD.m_HUD_number_0).left;
+		int CrossWidth = gHUD.GetSpriteRect(m_HUD_cross).right - gHUD.GetSpriteRect(m_HUD_cross).left;
+
+		y = ScreenHeight - gHUD.m_iFontHeight - gHUD.m_iFontHeight / 2;
+		x = CrossWidth /2;
+
+		SPR_Set(gHUD.GetSprite(m_HUD_cross), r, g, b);
+		SPR_DrawAdditive(0, x, y, &gHUD.GetSpriteRect(m_HUD_cross));
+
+		x = CrossWidth + HealthWidth / 2;
+
+		x = gHUD.DrawHudNumber(x, y, DHN_3DIGITS | DHN_DRAWZERO, m_iHealth, r, g, b);
+
+		x += HealthWidth/2;
+
+		int iHeight = gHUD.m_iFontHeight;
+		int iWidth = HealthWidth/10;
+		FillRGBA(x, y, iWidth, iHeight, 255, 160, 0, a);
+	}
+
+	DrawDamage(flTime);
+	return DrawPain(flTime);
 }
 
 void CHudHealth::CalcDamageDirection(vec3_t vecFrom)
@@ -316,7 +369,7 @@ int CHudHealth::DrawPain(float flTime)
 int CHudHealth::DrawDamage(float flTime)
 {
 	int r, g, b, a;
-	//DAMAGE_IMAGE *pdmg;
+	DAMAGE_IMAGE *pdmg;
 
 	if (!m_bitsDamage)
 		return 1;
@@ -332,19 +385,15 @@ int CHudHealth::DrawDamage(float flTime)
 	{
 		if (m_bitsDamage & giDmgFlags[i])
 		{
-			//pdmg = &m_dmg[i];
+			pdmg = &m_dmg[i];
 			SPR_Set(gHUD.GetSprite(m_HUD_dmg_bio + i), r, g, b );
-
-			// Discwar: Hack. Freeze is the only icon we use. Just place it directly above the disc ammo
-			int iX = (ScreenWidth - DISC_ICON_WIDTH) / 2;
-			int iXPos = iX - DISC_ICON_SPACER; 
-			SPR_DrawAdditive(0, iXPos + (DISC_ICON_SPACER), ScreenHeight - YRES(92), &gHUD.GetSpriteRect(m_HUD_dmg_bio + i));
+			SPR_DrawAdditive(0, pdmg->x, pdmg->y, &gHUD.GetSpriteRect(m_HUD_dmg_bio + i));
 		}
 	}
 
-/*
+
 	// check for bits that should be expired
-	for ( i = 0; i < NUM_DMG_TYPES; i++ )
+	for ( int i = 0; i < NUM_DMG_TYPES; i++ )
 	{
 		DAMAGE_IMAGE *pdmg = &m_dmg[i];
 
@@ -373,7 +422,7 @@ int CHudHealth::DrawDamage(float flTime)
 			}
 		}
 	}
-*/
+
 	return 1;
 }
  
@@ -423,3 +472,4 @@ void CHudHealth::UpdateTiles(float flTime, long bitsDamage)
 	// damage bits are only turned on here;  they are turned off when the draw time has expired (in DrawDamage())
 	m_bitsDamage |= bitsDamage;
 }
+

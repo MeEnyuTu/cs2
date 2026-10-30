@@ -1,23 +1,16 @@
-/***
-*
-*	Copyright (c) 1999, 2000 Valve LLC. All rights reserved.
-*	
-*	This product contains software technology licensed from Id 
-*	Software, Inc. ("Id Technology").  Id Technology (c) 1996 Id Software, Inc. 
-*	All Rights Reserved.
-*
-*   Use, distribution, and modification of this source code and/or resulting
-*   object code is restricted to non-commercial enhancements to products from
-*   Valve LLC.  All other use, distribution, or modification is prohibited
-*   without written permission from Valve LLC.
-*
-****/
+//========= Copyright © 1996-2002, Valve LLC, All rights reserved. ============
+//
+// Purpose: 
+//
+// $NoKeywords: $
+//=============================================================================
+
 // eventscripts.h
 #if !defined ( EVENTSCRIPTSH )
 #define EVENTSCRIPTSH
 
 // defaults for clientinfo messages
-#define	DEFAULT_VIEWHEIGHT	28
+#define	DEFAULT_VIEWHEIGHT	22
 #define VEC_DUCK_VIEW 12
 
 #define FTENT_FADEOUT			0x00000080

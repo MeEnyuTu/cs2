@@ -1,3 +1,10 @@
+//========= Copyright © 1996-2002, Valve LLC, All rights reserved. ============
+//
+// Purpose: 
+//
+// $NoKeywords: $
+//=============================================================================
+
 // studio_model.cpp
 // routines for setting up to draw 3DStudio models
 
@@ -131,12 +138,14 @@ void CStudioModelRenderer::StudioCalcBoneAdj( float dadt, float *adj, const byte
 				if (value > 1.0) value = 1.0;
 				value = (1.0 - value) * pbonecontroller[j].start + value * pbonecontroller[j].end;
 			}
+			// Con_DPrintf( "%d %d %f : %f\n", m_pCurrentEntity->curstate.controller[j], m_pCurrentEntity->latched.prevcontroller[j], value, dadt );
 		}
 		else
 		{
 			value = mouthopen / 64.0;
 			if (value > 1.0) value = 1.0;				
 			value = (1.0 - value) * pbonecontroller[j].start + value * pbonecontroller[j].end;
+			// Con_DPrintf("%d %f\n", mouthopen, value );
 		}
 		switch(pbonecontroller[j].type & STUDIO_TYPES)
 		{
@@ -415,6 +424,7 @@ void CStudioModelRenderer::StudioSetUpTransform (int trivial_accept)
 	vec3_t			angles;
 	vec3_t			modelpos;
 
+
 	VectorCopy( m_pCurrentEntity->origin, modelpos );
 
 // TODO: should really be stored with the entity instead of being reconstructed
@@ -423,7 +433,24 @@ void CStudioModelRenderer::StudioSetUpTransform (int trivial_accept)
 	angles[ROLL] = m_pCurrentEntity->curstate.angles[ROLL];
 	angles[PITCH] = m_pCurrentEntity->curstate.angles[PITCH];
 	angles[YAW] = m_pCurrentEntity->curstate.angles[YAW];
+	
+	//Adrian - Have the model rotate ( weapon world models, powerups and armor. )
+	//Yeah, we're too lazy to animate them!.
+	if ( strstr( m_pCurrentEntity->model->name, "g_" ) || strstr( m_pCurrentEntity->model->name, "pow_" ) || strstr( m_pCurrentEntity->model->name, "armour" ) )
+	{
+		float timemod;
 
+		timemod = fmod( gEngfuncs.GetClientTime(), 2.0f );
+
+		m_pCurrentEntity->angles[0] = 0;
+		m_pCurrentEntity->angles[YAW] = timemod * 180.0 - 90.0;
+		m_pCurrentEntity->angles[2] = 0;
+
+		VectorCopy( m_pCurrentEntity->angles, m_pCurrentEntity->curstate.angles );
+	}
+	
+	//Con_DPrintf("Angles %4.2f prev %4.2f for %i\n", angles[PITCH], m_pCurrentEntity->index);
+	//Con_DPrintf("movetype %d %d\n", m_pCurrentEntity->movetype, m_pCurrentEntity->aiment );
 	if (m_pCurrentEntity->curstate.movetype == MOVETYPE_STEP) 
 	{
 		float			f = 0;
@@ -438,6 +465,7 @@ void CStudioModelRenderer::StudioSetUpTransform (int trivial_accept)
 			 ( m_pCurrentEntity->curstate.animtime != m_pCurrentEntity->latched.prevanimtime ) )
 		{
 			f = (m_clTime - m_pCurrentEntity->curstate.animtime) / (m_pCurrentEntity->curstate.animtime - m_pCurrentEntity->latched.prevanimtime);
+			//Con_DPrintf("%4.2f %.2f %.2f\n", f, m_pCurrentEntity->curstate.animtime, m_clTime);
 		}
 
 		if (m_fDoInterp)
@@ -455,6 +483,11 @@ void CStudioModelRenderer::StudioSetUpTransform (int trivial_accept)
 			modelpos[i] += (m_pCurrentEntity->origin[i] - m_pCurrentEntity->latched.prevorigin[i]) * f;
 		}
 
+		// NOTE:  Because multiplayer lag can be relatively large, we don't want to cap
+		//  f at 1.5 anymore.
+		//if (f > -1.0 && f < 1.5) {}
+
+//			gEngfuncs.Con_DPrintf("%.0f %.0f\n",m_pCurrentEntity->angles[0][YAW], m_pCurrentEntity->angles[1][YAW] );
 		for (i = 0; i < 3; i++)
 		{
 			float ang1, ang2;
@@ -474,11 +507,16 @@ void CStudioModelRenderer::StudioSetUpTransform (int trivial_accept)
 
 			angles[i] += d * f;
 		}
+		//Con_DPrintf("%.3f \n", f );
 	}
 	else if ( m_pCurrentEntity->curstate.movetype != MOVETYPE_NONE ) 
 	{
 		VectorCopy( m_pCurrentEntity->angles, angles );
 	}
+
+	//Con_DPrintf("%.0f %0.f %0.f\n", modelpos[0], modelpos[1], modelpos[2] );
+//	gEngfuncs.Con_DPrintf("%.0f %0.f %0.f\n", angles[0], angles[1], angles[2] );
+
 
 	angles[PITCH] = -angles[PITCH];
 	AngleMatrix (angles, (*m_protationmatrix));
@@ -574,6 +612,13 @@ void CStudioModelRenderer::StudioCalcRotations ( float pos[][3], vec4_t *q, mstu
 
 	frame = (int)f;
 
+	// Con_DPrintf("%d %.4f %.4f %.4f %.4f %d\n", m_pCurrentEntity->curstate.sequence, m_clTime, m_pCurrentEntity->animtime, m_pCurrentEntity->frame, f, frame );
+
+	// Con_DPrintf( "%f %f %f\n", m_pCurrentEntity->angles[ROLL], m_pCurrentEntity->angles[PITCH], m_pCurrentEntity->angles[YAW] );
+
+	// Con_DPrintf("frame %d %d\n", frame1, frame2 );
+
+
 	dadt = StudioEstimateInterpolant( );
 	s = (f - frame);
 
@@ -587,6 +632,8 @@ void CStudioModelRenderer::StudioCalcRotations ( float pos[][3], vec4_t *q, mstu
 		StudioCalcBoneQuaterion( frame, s, pbone, panim, adj, q[i] );
 
 		StudioCalcBonePosition( frame, s, pbone, panim, adj, pos[i] );
+		// if (0 && i == 0)
+		//	Con_DPrintf("%d %d %d %d\n", m_pCurrentEntity->curstate.sequence, frame, j, k );
 	}
 
 	if (pseqdesc->motiontype & STUDIO_X)
@@ -626,6 +673,7 @@ Studio_FxTransform
 */
 void CStudioModelRenderer::StudioFxTransform( cl_entity_t *ent, float transform[3][4] )
 {
+
 	switch( ent->curstate.renderfx )
 	{
 	case kRenderFxDistort:
@@ -761,6 +809,11 @@ void CStudioModelRenderer::StudioSetupBones ( void )
 
 	f = StudioEstimateFrame( pseqdesc );
 
+	if (m_pCurrentEntity->latched.prevframe > f)
+	{
+		//Con_DPrintf("%f %f\n", m_pCurrentEntity->prevframe, f );
+	}
+
 	panim = StudioGetAnim( m_pRenderModel, pseqdesc );
 	StudioCalcRotations( pos, q, pseqdesc, panim, f );
 
@@ -837,6 +890,7 @@ void CStudioModelRenderer::StudioSetupBones ( void )
 	}
 	else
 	{
+		//Con_DPrintf("prevframe = %4.2f\n", f);
 		m_pCurrentEntity->latched.prevframe = f;
 	}
 
@@ -867,16 +921,20 @@ void CStudioModelRenderer::StudioSetupBones ( void )
 		bonematrix[0][3] = pos[i][0];
 		bonematrix[1][3] = pos[i][1];
 		bonematrix[2][3] = pos[i][2];
-
+		
 		if (pbones[i].parent == -1) 
 		{
+
+			//Adrian - Scale the player's model height down
+			//NOTE: This is only relative for a few models, 
+			//some other models might need a different number.
+			if ( m_pCurrentEntity->player )
+				 bonematrix[2][2] *= 0.89; // (2,2) is Z component
+
 			if ( IEngineStudio.IsHardware() )
 			{
 				ConcatTransforms ((*m_protationmatrix), bonematrix, (*m_pbonetransform)[i]);
-
-				// MatrixCopy should be faster...
-				//ConcatTransforms ((*m_protationmatrix), bonematrix, (*m_plighttransform)[i]);
-				MatrixCopy( (*m_pbonetransform)[i], (*m_plighttransform)[i] );
+				ConcatTransforms ((*m_protationmatrix), bonematrix, (*m_plighttransform)[i]);
 			}
 			else
 			{
@@ -893,6 +951,7 @@ void CStudioModelRenderer::StudioSetupBones ( void )
 			ConcatTransforms ((*m_plighttransform)[pbones[i].parent], bonematrix, (*m_plighttransform)[i]);
 		}
 	}
+	
 }
 
 
@@ -948,6 +1007,11 @@ void CStudioModelRenderer::StudioMergeBones ( model_t *m_pSubModel )
 
 	f = StudioEstimateFrame( pseqdesc );
 
+	if (m_pCurrentEntity->latched.prevframe > f)
+	{
+		//Con_DPrintf("%f %f\n", m_pCurrentEntity->prevframe, f );
+	}
+
 	panim = StudioGetAnim( m_pSubModel, pseqdesc );
 	StudioCalcRotations( pos, q, pseqdesc, panim, f );
 
@@ -978,10 +1042,8 @@ void CStudioModelRenderer::StudioMergeBones ( model_t *m_pSubModel )
 				if ( IEngineStudio.IsHardware() )
 				{
 					ConcatTransforms ((*m_protationmatrix), bonematrix, (*m_pbonetransform)[i]);
-
-					// MatrixCopy should be faster...
-					//ConcatTransforms ((*m_protationmatrix), bonematrix, (*m_plighttransform)[i]);
-					MatrixCopy( (*m_pbonetransform)[i], (*m_plighttransform)[i] );
+					ConcatTransforms ((*m_protationmatrix), bonematrix, (*m_plighttransform)[i]);
+					//MatrixCopy( (*m_pbonetransform)[i], (*m_plighttransform)[i] );
 				}
 				else
 				{
@@ -1077,6 +1139,7 @@ int CStudioModelRenderer::StudioDrawModel( int flags )
 	{
 		StudioSetupBones( );
 	}
+	
 	StudioSaveBones( );
 
 	if (flags & STUDIO_EVENTS)
@@ -1099,6 +1162,10 @@ int CStudioModelRenderer::StudioDrawModel( int flags )
 
 		IEngineStudio.StudioEntityLight( &lighting );
 
+		//Scale the spike model lighting by a factor of 30 ( H4X!! )
+		if ( strstr ( m_pCurrentEntity->model->name, "spike.mdl" ) )
+			lighting.ambientlight *= 30; 
+		
 		// model and frame independant
 		IEngineStudio.StudioSetupLighting (&lighting);
 
@@ -1208,6 +1275,8 @@ void CStudioModelRenderer::StudioProcessGait( entity_state_t *pplayer )
 	m_pCurrentEntity->latched.prevblending[0] = m_pCurrentEntity->curstate.blending[0];
 	m_pCurrentEntity->latched.prevseqblending[0] = m_pCurrentEntity->curstate.blending[0];
 
+	// Con_DPrintf("%f %d\n", m_pCurrentEntity->angles[PITCH], m_pCurrentEntity->blending[0] );
+
 	dt = (m_clTime - m_clOldTime);
 	if (dt < 0)
 		dt = 0;
@@ -1215,6 +1284,8 @@ void CStudioModelRenderer::StudioProcessGait( entity_state_t *pplayer )
 		dt = 1;
 
 	StudioEstimateGait( pplayer );
+
+	// Con_DPrintf("%f %f\n", m_pCurrentEntity->angles[YAW], m_pPlayerInfo->gaityaw );
 
 	// calc side to side turning
 	flYaw = m_pCurrentEntity->angles[YAW] - m_pPlayerInfo->gaityaw;
@@ -1286,6 +1357,12 @@ int CStudioModelRenderer::StudioDrawPlayer( int flags, entity_state_t *pplayer )
 	IEngineStudio.GetViewInfo( m_vRenderOrigin, m_vUp, m_vRight, m_vNormal );
 	IEngineStudio.GetAliasScale( &m_fSoftwareXScale, &m_fSoftwareYScale );
 
+	// Con_DPrintf("DrawPlayer %d\n", m_pCurrentEntity->blending[0] );
+
+	// Con_DPrintf("DrawPlayer %d %d (%d)\n", m_nFrameCount, pplayer->player_index, m_pCurrentEntity->curstate.sequence );
+
+	// Con_DPrintf("Player %.2f %.2f %.2f\n", pplayer->velocity[0], pplayer->velocity[1], pplayer->velocity[2] );
+
 	m_nPlayerIndex = pplayer->number - 1;
 
 	if (m_nPlayerIndex < 0 || m_nPlayerIndex >= gEngfuncs.GetMaxClients())
@@ -1346,6 +1423,7 @@ int CStudioModelRenderer::StudioDrawPlayer( int flags, entity_state_t *pplayer )
 
 	m_pPlayerInfo = IEngineStudio.PlayerInfo( m_nPlayerIndex );
 	StudioSetupBones( );
+
 	StudioSaveBones( );
 	m_pPlayerInfo->renderframe = m_nFrameCount;
 
@@ -1382,6 +1460,9 @@ int CStudioModelRenderer::StudioDrawPlayer( int flags, entity_state_t *pplayer )
 
 		IEngineStudio.StudioEntityLight( &lighting );
 
+		//Scale player model lighting by a factor of 100 ( H4X!! )
+		lighting.ambientlight *= 100; 
+		
 		// model and frame independant
 		IEngineStudio.StudioSetupLighting (&lighting);
 
@@ -1404,7 +1485,7 @@ int CStudioModelRenderer::StudioDrawPlayer( int flags, entity_state_t *pplayer )
 		StudioRenderModel( );
 		m_pPlayerInfo = NULL;
 
-		if (pplayer->weaponmodel)
+		if ( pplayer->weaponmodel )
 		{
 			cl_entity_t saveent = *m_pCurrentEntity;
 
@@ -1412,6 +1493,26 @@ int CStudioModelRenderer::StudioDrawPlayer( int flags, entity_state_t *pplayer )
 
 			m_pStudioHeader = (studiohdr_t *)IEngineStudio.Mod_Extradata (pweaponmodel);
 			IEngineStudio.StudioSetHeader( m_pStudioHeader );
+
+			//Animate p_ model.
+			if ( strstr ( pweaponmodel->name, "p_nail2.mdl" ) )
+			{
+				if ( m_pCurrentEntity->curstate.sequence == 50 )
+			         m_pCurrentEntity->curstate.sequence = 1;
+				else 
+					m_pCurrentEntity->curstate.sequence = 0;
+
+				StudioSetupBones( );
+			}
+			else if ( strstr ( pweaponmodel->name, "p_rock.mdl" ) )
+			{
+				if ( m_pCurrentEntity->curstate.sequence == 46 )
+			         m_pCurrentEntity->curstate.sequence = 1;
+				else 
+					 m_pCurrentEntity->curstate.sequence = 0;
+
+				StudioSetupBones( );
+			}
 
 			StudioMergeBones( pweaponmodel);
 
@@ -1466,9 +1567,23 @@ void CStudioModelRenderer::StudioRenderModel( void )
 
 	if ( m_pCurrentEntity->curstate.renderfx == kRenderFxGlowShell )
 	{
-		m_pCurrentEntity->curstate.renderfx = kRenderFxNone;
-		StudioRenderFinal( );
-		
+		if ( strstr ( m_pCurrentEntity->model->name, "v_" ) )
+		{
+			if ( m_pCurrentEntity->curstate.renderamt != 5 )
+			{
+				m_pCurrentEntity->curstate.renderfx = kRenderFxNone;
+				StudioRenderFinal( );
+			}
+		}
+		else
+		{
+			if ( m_pCurrentEntity->curstate.renderamt != 5 && m_pCurrentEntity->curstate.rendermode != kRenderTransColor )
+			{
+				m_pCurrentEntity->curstate.renderfx = kRenderFxNone;
+				StudioRenderFinal( );
+			}
+		}
+	
 		if ( !IEngineStudio.IsHardware() )
 		{
 			gEngfuncs.pTriAPI->RenderMode( kRenderTransAdd );
@@ -1484,6 +1599,7 @@ void CStudioModelRenderer::StudioRenderModel( void )
 		{
 			gEngfuncs.pTriAPI->RenderMode( kRenderNormal );
 		}
+		
 	}
 	else
 	{

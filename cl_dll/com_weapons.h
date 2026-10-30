@@ -1,3 +1,10 @@
+//========= Copyright © 1996-2002, Valve LLC, All rights reserved. ============
+//
+// Purpose: 
+//
+// $NoKeywords: $
+//=============================================================================
+
 // com_weapons.h
 // Shared weapons common function prototypes
 #if !defined( COM_WEAPONSH )
@@ -10,7 +17,7 @@
 
 extern "C"
 {
-	void EXPORT HUD_PostRunCmd( struct local_state_s *from, struct local_state_s *to, struct usercmd_s *cmd, int runfuncs, double time, unsigned int random_seed );
+	void _DLLEXPORT HUD_PostRunCmd( struct local_state_s *from, struct local_state_s *to, struct usercmd_s *cmd, int runfuncs, double time, unsigned int random_seed );
 }
 
 void			COM_Log( const char *pszFile, const char *fmt, ...);

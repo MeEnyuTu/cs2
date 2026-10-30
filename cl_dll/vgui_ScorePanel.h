@@ -1,3 +1,9 @@
+//========= Copyright © 1996-2002, Valve LLC, All rights reserved. ============
+//
+// Purpose: 
+//
+// $NoKeywords: $
+//=============================================================================
 
 #ifndef SCOREPANEL_H
 #define SCOREPANEL_H
@@ -18,13 +24,13 @@
 // Scoreboard cells
 #define COLUMN_TRACKER	0
 #define COLUMN_NAME		1
-#define COLUMN_CLASS	2
-#define COLUMN_KILLS	3
-#define COLUMN_DEATHS	4
-#define COLUMN_LATENCY	5
-#define COLUMN_VOICE	6
-#define COLUMN_BLANK	7
-#define NUM_COLUMNS		8
+#define COLUMN_KILLS	2
+#define COLUMN_DEATHS	3
+#define COLUMN_LATENCY	4
+#define COLUMN_VOICE	5
+#define COLUMN_BLANK	6
+#define NUM_COLUMNS		7
+
 #define NUM_ROWS		(MAX_PLAYERS + (MAX_SCOREBOARD_TEAMS * 2))
 
 using namespace vgui;
@@ -172,17 +178,17 @@ public:
 		Color color(r,g,b,a);
 		_dualImage->setColor(color);
 		_dualImage->setColor2(color);
+		if (_image && _useFgColorAsImageColor)
+		{
+			_image->setColor(color);
+		}
 		repaint();
 	}
 
 	void setFgColor(Scheme::SchemeColor sc)
 	{
-		int r, g, b, a;
 		Label::setFgColor(sc);
-		Label::getFgColor( r, g, b, a );
-
-		// Call the r,g,b,a version so it sets the color in the dualImage..
-		setFgColor( r, g, b, a );
+		_dualImage->setColor(sc);
 	}
 
 	void setFont(Font *font)
@@ -255,11 +261,8 @@ private:
 	CLabelHeader	m_PlayerEntries[NUM_COLUMNS][NUM_ROWS];	// Labels for the grid entries.
 
 	ScorePanel::HitTestPanel	m_HitTestPanel;
-//	CommandButton				*m_pCloseButton;
+
 	CLabelHeader*	GetPlayerEntry(int x, int y)	{return &m_PlayerEntries[x][y];}
-
-	vgui::BitmapTGA *m_pTrackerIcon;
-
 
 public:
 	
@@ -273,6 +276,8 @@ public:
 	bool			m_bHasBeenSorted[MAX_PLAYERS];
 	int				m_iLastKilledBy;
 	int				m_fLastKillTime;
+
+	CImageLabel		*m_pImages[ 7 ];
 
 
 public:
@@ -295,6 +300,7 @@ public:
 
 	void MouseOverCell(int row, int col);
 
+
 // InputSignal overrides.
 public:
 
@@ -305,3 +311,4 @@ public:
 };
 
 #endif
+

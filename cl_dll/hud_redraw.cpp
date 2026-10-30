@@ -1,6 +1,6 @@
 /***
 *
-*	Copyright (c) 1999, 2000 Valve LLC. All rights reserved.
+*	Copyright (c) 1996-2002, Valve LLC. All rights reserved.
 *	
 *	This product contains software technology licensed from Id 
 *	Software, Inc. ("Id Technology").  Id Technology (c) 1996 Id Software, Inc. 
@@ -18,7 +18,10 @@
 #include <math.h>
 #include "hud.h"
 #include "cl_util.h"
+#include <string.h>
+#include "vgui_viewport.h"
 
+extern int g_iVisibleMouse;
 
 #define MAX_LOGO_FRAMES 56
 
@@ -29,7 +32,6 @@ int grgLogoFrame[MAX_LOGO_FRAMES] =
 	29, 29, 29, 29, 29, 28, 27, 26, 25, 24, 30, 31 
 };
 
-extern int g_iVisibleMouse;
 
 // Think
 void CHud::Think(void)
@@ -50,6 +52,8 @@ void CHud::Think(void)
 	{  // only let players adjust up in fov,  and only if they are not overriden by something else
 		m_iFOV = max( default_fov->value, 90 );  
 	}
+
+	
 }
 
 // Redraw
@@ -60,32 +64,65 @@ int CHud :: Redraw( float flTime, int intermission )
 	m_fOldTime = m_flTime;	// save time of previous redraw
 	m_flTime = flTime;
 	m_flTimeDelta = (double)m_flTime - m_fOldTime;
+	static float m_flShotTime = 0;
 	
 	// Clock was reset, reset delta
 	if ( m_flTimeDelta < 0 )
 		m_flTimeDelta = 0;
 
-	m_iIntermission = intermission;
+	// Bring up the scoreboard during intermission
+	if (gViewPort)
+	{
+		if ( m_iIntermission && !intermission )
+		{
+			// Have to do this here so the scoreboard goes away
+			m_iIntermission = intermission;
+			gViewPort->HideCommandMenu();
+			gViewPort->HideScoreBoard();
+			gViewPort->UpdateSpectatorPanel();
+		}
+		else if ( !m_iIntermission && intermission )
+		{
+			m_iIntermission = intermission;
+			gViewPort->HideCommandMenu();
+			gViewPort->HideVGUIMenu();
+			gViewPort->ShowScoreBoard();
+			gViewPort->UpdateSpectatorPanel();
 
+			// Take a screenshot if the client's got the cvar set
+			if ( CVAR_GET_FLOAT( "hud_takesshots" ) != 0 )
+				m_flShotTime = flTime + 1.0;	// Take a screenshot in a second
+		}
+	}
+
+	if (m_flShotTime && m_flShotTime < flTime)
+	{
+		gEngfuncs.pfnClientCmd("snapshot\n");
+		m_flShotTime = 0;
+	}
 	// if no redrawing is necessary
 	// return 0;
 	
-	HUDLIST *pList = m_pHudList;
-
-	while (pList)
+	// draw all registered HUD elements
+	if ( m_pCvarDraw->value )
 	{
-		if ( !intermission )
-		{
-			if ((pList->p->m_iFlags & HUD_ACTIVE) && !(m_iHideHUDDisplay & HIDEHUD_ALL))
-				pList->p->Draw(flTime);
-		}
-		else
-		{  // it's an intermission,  so only draw hud elements that are set to draw during intermissions
-			if ( pList->p->m_iFlags & HUD_INTERMISSION )
-				pList->p->Draw( flTime );
-		}
+		HUDLIST *pList = m_pHudList;
 
-		pList = pList->pNext;
+		while (pList)
+		{
+			if ( !intermission )
+			{
+				if ((pList->p->m_iFlags & HUD_ACTIVE) && !(m_iHideHUDDisplay & HIDEHUD_ALL))
+					pList->p->Draw(flTime);
+			}
+			else
+			{  // it's an intermission,  so only draw hud elements that are set to draw during intermissions
+				if ( pList->p->m_iFlags & HUD_INTERMISSION )
+					pList->p->Draw( flTime );
+			}
+
+			pList = pList->pNext;
+		}
 	}
 
 	// are we in demo mode? do we need to draw the logo in the top corner?
@@ -108,6 +145,7 @@ int CHud :: Redraw( float flTime, int intermission )
 
 		SPR_DrawAdditive(i, x, y, NULL);
 	}
+	
 
 	return 1;
 }
@@ -119,6 +157,151 @@ void ScaleColors( int &r, int &g, int &b, int a )
 	g = (int)(g * x);
 	b = (int)(b * x);
 }
+
+
+
+/*
+===========================
+int ReturnStringPixelLength ( char *Hihi )
+
+Returns a integer representing the length of the string passed
+===========================
+*/
+int CHud :: ReturnStringPixelLength ( char *Hihi )
+{
+	int iNameLength = 0;
+
+	int strleng = ( strlen( Hihi ) );
+
+	for ( int har = 0; har < strleng; har++)
+		iNameLength += gHUD.m_scrinfo.charWidths[ size_t(Hihi[har]) ];
+
+	return iNameLength;
+}
+
+int LastColor;
+
+int CHud :: DrawHudStringCTF(int xpos, int ypos, int iMaxX, const char *szIt, int r, int g, int b )
+{
+	int WantColor = 0;
+	int Color = 0;
+	
+	// draw the string until we hit the null character or a newline character
+	for ( ; *szIt != 0 && *szIt != '\n'; szIt++ )
+	{
+		int next = 0;// = xpos + gHUD.m_scrinfo.charWidths[ *szIt ]; // variable-width fonts look cool
+		
+	/*	if ( next > iMaxX )
+			return xpos;*/
+
+
+		if (*szIt == '\\')
+		{
+			if (Color > 0)
+				Color = 0;
+
+			WantColor = 1;
+			
+		}
+
+		if (WantColor == 1 && *szIt == 'w')
+		{
+			Color = 1;
+			LastColor = Color;
+		}
+			
+		
+		if (WantColor == 1 && *szIt == 'g')
+		{
+			Color = 2;
+			LastColor = Color;
+		}
+			
+		
+
+		if (WantColor == 1 && *szIt == 'b')
+		{
+			Color = 3;
+			LastColor = Color;
+		}
+			
+		
+		if (WantColor == 1 && *szIt == 'r')
+		{
+			Color = 4;
+			LastColor = Color;
+		}
+		
+		
+
+		if (WantColor == 1 && *szIt == 'y')
+		{
+			Color = 5;
+			LastColor = Color;
+		}
+			
+		
+
+		if (WantColor == 1 && *szIt == 'q')
+		{
+			Color = 6;
+			LastColor = Color;
+		}
+
+			
+
+		if (Color == 0 && WantColor == 0)
+		{
+			if (LastColor == 1)
+				TextMessageDrawChar( xpos, ypos, *szIt, 255, 255, 255 );
+			if (LastColor == 2)
+				TextMessageDrawChar( xpos, ypos, *szIt, 0, 79, 0);
+			if (LastColor == 3)
+				TextMessageDrawChar( xpos, ypos, *szIt, 0, 0, 200);
+			if (LastColor == 4)
+				TextMessageDrawChar( xpos, ypos, *szIt, 200, 0, 0 );
+			if (LastColor == 5)
+				TextMessageDrawChar( xpos, ypos, *szIt, 198, 221, 66 );
+			if (LastColor == 6)
+				TextMessageDrawChar( xpos, ypos, *szIt, 136, 136, 136 );
+			
+			else if (LastColor == 0)
+				TextMessageDrawChar( xpos, ypos, *szIt, r, g, b );
+
+			next = xpos + gHUD.m_scrinfo.charWidths[ size_t(*szIt) ];
+		}
+		
+		else if (Color > 0 && WantColor == 0 )
+		{
+			if (Color == 1)
+				TextMessageDrawChar( xpos, ypos, *szIt, 255, 255, 255 );
+			if (Color == 2)
+				TextMessageDrawChar( xpos, ypos, *szIt, 0, 79, 0);
+			if (Color == 3)
+				TextMessageDrawChar( xpos, ypos, *szIt, 0, 0, 200);
+			if (Color == 4)
+				TextMessageDrawChar( xpos, ypos, *szIt, 200, 0, 0 );
+			if (Color == 5)
+				TextMessageDrawChar( xpos, ypos, *szIt, 198, 221, 66 );
+			if (Color == 6)
+				TextMessageDrawChar( xpos, ypos, *szIt, 136, 136, 136 );
+
+			next = xpos + gHUD.m_scrinfo.charWidths[ size_t(*szIt) ];
+		}
+
+		else if (Color > 0 && WantColor == 1)
+		{
+			//next = xpos + (gHUD.m_scrinfo.charWidths[ *szIt ] * 2); // variable-width fonts look cool
+			WantColor = 0;
+		}
+
+			
+		xpos = next;		
+	}
+
+	return xpos;
+}
+
 
 int CHud :: DrawHudString(int xpos, int ypos, int iMaxX, const char *szIt, int r, int g, int b )
 {

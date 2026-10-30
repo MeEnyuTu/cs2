@@ -1,9 +1,14 @@
-#include <VGUI_Font.h>
+//========= Copyright © 1996-2002, Valve LLC, All rights reserved. ============
+//
+// Purpose: 
+//
+// $NoKeywords: $
+//=============================================================================
 
+#include <VGUI_Font.h>
 
 // handle to an individual scheme
 typedef int SchemeHandle_t;
-
 
 // Register console variables, etc..
 void Scheme_Init();

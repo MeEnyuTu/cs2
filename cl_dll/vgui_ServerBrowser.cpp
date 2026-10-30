@@ -1,3 +1,9 @@
+//========= Copyright © 1996-2002, Valve LLC, All rights reserved. ============
+//
+// Purpose: 
+//
+// $NoKeywords: $
+//=============================================================================
 
 #include<VGUI_HeaderPanel.h>
 #include<VGUI_TablePanel.h>
@@ -11,7 +17,7 @@
 #include "hud_servers.h"
 #include "net_api.h"
 
-#include "vgui_TeamFortressViewport.h"
+#include "vgui_viewport.h"
 #include "vgui_ServerBrowser.h"
 
 using namespace vgui;
@@ -559,6 +565,7 @@ ServerBrowser::ServerBrowser(int x,int y,int wide,int tall) : CTransparentPanel(
 	setPaintBorderEnabled(false);
 	setPaintBackgroundEnabled(false);
 	setPaintEnabled(false);
+
 }
 
 void ServerBrowser::setSize(int wide,int tall)

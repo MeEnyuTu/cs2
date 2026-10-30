@@ -1,18 +1,16 @@
-/***
-*
-*	Copyright (c) 1999, 2000 Valve LLC. All rights reserved.
-*	
-*	This product contains software technology licensed from Id 
-*	Software, Inc. ("Id Technology").  Id Technology (c) 1996 Id Software, Inc. 
-*	All Rights Reserved.
-*
-*   Use, distribution, and modification of this source code and/or resulting
-*   object code is restricted to non-commercial enhancements to products from
-*   Valve LLC.  All other use, distribution, or modification is prohibited
-*   without written permission from Valve LLC.
-*
-****/
-// input.cpp  -- builds an intended movement command to send to the server
+//========= Copyright © 1996-2002, Valve LLC, All rights reserved. ============
+//
+// Purpose: 
+//
+// $NoKeywords: $
+//=============================================================================
+
+// cl.input.c  -- builds an intended movement command to send to the server
+
+//xxxxxx Move bob and pitch drifting code here and other stuff from view if needed
+
+// Quake is a trademark of Id Software, Inc., (c) 1996 Id Software, Inc. All
+// rights reserved.
 #include "hud.h"
 #include "cl_util.h"
 #include "camera.h"
@@ -28,15 +26,8 @@ extern "C"
 #include "view.h"
 #include <string.h>
 #include <ctype.h>
-
-#include "vgui_TeamFortressViewport.h"
-#include "vgui_discobjects.h"
-
-// Observer Movement modes (stored in pev->iuser1, so the physics code can get at them)
-#define OBS_CHASE_LOCKED		1
-#define OBS_CHASE_FREE			2
-#define OBS_ROAMING				3	
-#define OBS_LOCKEDVIEW			4
+#include "vgui_viewport.h"
+#include "voice_status.h"
 
 extern "C" 
 {
@@ -363,6 +354,7 @@ void KeyUp (kbutton_t *b)
 		return;		// key up without coresponding down (menu pass through)
 	if (b->down[0] || b->down[1])
 	{
+		//Con_Printf ("Keys down for button: '%c' '%c' '%c' (%d,%d,%d)!\n", b->down[0], b->down[1], c, b->down[0], b->down[1], c);
 		return;		// some other key is still holding it down
 	}
 
@@ -372,6 +364,7 @@ void KeyUp (kbutton_t *b)
 	b->state &= ~1;		// now up
 	b->state |= 4; 		// impulse up
 }
+
 /*
 ============
 HUD_Key_Event
@@ -382,7 +375,9 @@ Return 1 to allow engine to process the key, otherwise, act on it as needed
 int EXPORT HUD_Key_Event( int down, int keynum, const char *pszCurrentBinding )
 {
 	if (gViewPort)
+	{
 		return gViewPort->KeyInput(down, keynum, pszCurrentBinding);
+	}
 
 	return 1;
 }
@@ -402,29 +397,88 @@ void IN_LeftDown(void) {KeyDown(&in_left);}
 void IN_LeftUp(void) {KeyUp(&in_left);}
 void IN_RightDown(void) {KeyDown(&in_right);}
 void IN_RightUp(void) {KeyUp(&in_right);}
-void IN_ForwardDown(void) {KeyDown(&in_forward);}
-void IN_ForwardUp(void) {KeyUp(&in_forward);}
-void IN_BackDown(void) {KeyDown(&in_back);}
-void IN_BackUp(void) {KeyUp(&in_back);}
+
+void IN_ForwardDown(void)
+{
+	KeyDown(&in_forward);
+	gHUD.m_Spectator.HandleButtonsDown( IN_FORWARD );
+}
+
+void IN_ForwardUp(void)
+{
+	KeyUp(&in_forward);
+	gHUD.m_Spectator.HandleButtonsUp( IN_FORWARD );
+}
+
+void IN_BackDown(void)
+{
+	KeyDown(&in_back);
+	gHUD.m_Spectator.HandleButtonsDown( IN_BACK );
+}
+
+void IN_BackUp(void)
+{
+	KeyUp(&in_back);
+	gHUD.m_Spectator.HandleButtonsUp( IN_BACK );
+}
 void IN_LookupDown(void) {KeyDown(&in_lookup);}
 void IN_LookupUp(void) {KeyUp(&in_lookup);}
 void IN_LookdownDown(void) {KeyDown(&in_lookdown);}
 void IN_LookdownUp(void) {KeyUp(&in_lookdown);}
-void IN_MoveleftDown(void) {KeyDown(&in_moveleft);}
-void IN_MoveleftUp(void) {KeyUp(&in_moveleft);}
-void IN_MoverightDown(void) {KeyDown(&in_moveright);}
-void IN_MoverightUp(void) {KeyUp(&in_moveright);}
+void IN_MoveleftDown(void)
+{
+	KeyDown(&in_moveleft);
+	gHUD.m_Spectator.HandleButtonsDown( IN_MOVELEFT );
+}
+
+void IN_MoveleftUp(void)
+{
+	KeyUp(&in_moveleft);
+	gHUD.m_Spectator.HandleButtonsUp( IN_MOVELEFT );
+}
+
+void IN_MoverightDown(void)
+{
+	KeyDown(&in_moveright);
+	gHUD.m_Spectator.HandleButtonsDown( IN_MOVERIGHT );
+}
+
+void IN_MoverightUp(void)
+{
+	KeyUp(&in_moveright);
+	gHUD.m_Spectator.HandleButtonsUp( IN_MOVERIGHT );
+}
 void IN_SpeedDown(void) {KeyDown(&in_speed);}
 void IN_SpeedUp(void) {KeyUp(&in_speed);}
 void IN_StrafeDown(void) {KeyDown(&in_strafe);}
 void IN_StrafeUp(void) {KeyUp(&in_strafe);}
-void IN_Attack2Down(void) {KeyDown(&in_attack2);}
+
+void IN_Attack2Down(void) 
+{
+	KeyDown(&in_attack2);
+	gHUD.m_Spectator.HandleButtonsDown( IN_ATTACK2 );
+}
+
 void IN_Attack2Up(void) {KeyUp(&in_attack2);}
-void IN_UseDown (void) {KeyDown(&in_use);}
+void IN_UseDown (void)
+{
+	KeyDown(&in_use);
+	gHUD.m_Spectator.HandleButtonsDown( IN_USE );
+}
 void IN_UseUp (void) {KeyUp(&in_use);}
-void IN_JumpDown (void) {KeyDown(&in_jump);}
+
+void IN_JumpDown (void)
+{
+	KeyDown(&in_jump);
+	gHUD.m_Spectator.HandleButtonsDown( IN_JUMP );
+}
 void IN_JumpUp (void) {KeyUp(&in_jump);}
-void IN_DuckDown(void) {KeyDown(&in_duck);}
+
+void IN_DuckDown(void)
+{
+	KeyDown(&in_duck);
+	gHUD.m_Spectator.HandleButtonsDown( IN_DUCK );
+}
 void IN_DuckUp(void) {KeyUp(&in_duck);}
 void IN_ReloadDown(void) {KeyDown(&in_reload);}
 void IN_ReloadUp(void) {KeyUp(&in_reload);}
@@ -436,6 +490,7 @@ void IN_GraphUp(void) {KeyUp(&in_graph);}
 void IN_AttackDown(void)
 {
 	KeyDown( &in_attack );
+	gHUD.m_Spectator.HandleButtonsDown( IN_ATTACK );
 }
 
 void IN_AttackUp(void)
@@ -458,6 +513,7 @@ void IN_Impulse (void)
 void IN_ScoreDown(void)
 {
 	KeyDown(&in_score);
+
 	if ( gViewPort )
 	{
 		gViewPort->ShowScoreBoard();
@@ -467,6 +523,7 @@ void IN_ScoreDown(void)
 void IN_ScoreUp(void)
 {
 	KeyUp(&in_score);
+
 	if ( gViewPort )
 	{
 		gViewPort->HideScoreBoard();
@@ -538,16 +595,6 @@ float CL_KeyState (kbutton_t *key)
 	return val;
 }
 
-bool bCanMoveMouse ( void )
-{
-	if ( gViewPort && ( gViewPort->m_iUser1 == OBS_ROAMING || gViewPort->m_iUser1 == OBS_CHASE_FREE ) )
-		 return TRUE;
-
-	if ( gViewPort && gViewPort->m_iUser1 == OBS_LOCKEDVIEW )
-		 return FALSE;
-
-	return TRUE;
-}
 /*
 ================
 CL_AdjustAngles
@@ -568,10 +615,6 @@ void CL_AdjustAngles ( float frametime, float *viewangles )
 	{
 		speed = frametime;
 	}
-
-	// Ricochet: Don't let them move the mouse when they're in spectator mode
-	if ( bCanMoveMouse() == FALSE ) 
-		 return;
 
 	if (!(in_strafe.state & 1))
 	{
@@ -684,13 +727,14 @@ void EXPORT CL_CreateMove ( float frametime, struct usercmd_s *cmd, int active )
 
 	cmd->weaponselect = g_weaponselect;
 	g_weaponselect = 0;
+	
 	//
 	// set button and flag bits
 	//
 	cmd->buttons = CL_ButtonBits( 1 );
 
 	// If they're in a modal dialog, ignore the attack button.
-	if( GetClientVoiceMgr()->IsInSquelchMode() )
+	if(GetClientVoiceMgr()->IsInSquelchMode())
 		cmd->buttons &= ~IN_ATTACK;
 	
 	// Using joystick?
@@ -985,4 +1029,11 @@ void EXPORT HUD_Shutdown( void )
 	{
 		Sys_UnloadModule(g_hTrackerModule);
 	}
+
+	extern CSysModule *g_pFileSystemModule;
+	if (g_pFileSystemModule)
+	{
+		Sys_UnloadModule(g_pFileSystemModule);
+	}
+
 }

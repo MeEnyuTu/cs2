@@ -2,43 +2,58 @@
 <Project ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
   <ItemGroup>
     <Filter Include="Source Files">
-      <UniqueIdentifier>{40d6fe6b-24d8-4ac8-aea4-16900e9d852a}</UniqueIdentifier>
+      <UniqueIdentifier>{11d45652-5042-4843-a340-27b6ec1a24d2}</UniqueIdentifier>
       <Extensions>cpp;c;cxx;rc;def;r;odl;idl;hpj;bat;for;f90</Extensions>
     </Filter>
-    <Filter Include="Source Files\hl">
-      <UniqueIdentifier>{f8823966-a67d-4a3a-bde7-d1dc0cb96b19}</UniqueIdentifier>
+    <Filter Include="Source Files\quake">
+      <UniqueIdentifier>{14bb67fc-ed98-42e4-a34d-5d70147a50a1}</UniqueIdentifier>
       <Extensions>*.cpp</Extensions>
     </Filter>
     <Filter Include="Header Files">
-      <UniqueIdentifier>{c768871a-d759-46fc-9db5-7fdfab6fe2ce}</UniqueIdentifier>
+      <UniqueIdentifier>{2b6636b4-3cf7-488d-89bf-23b61a2865e4}</UniqueIdentifier>
       <Extensions>h;hpp;hxx;hm;inl;fi;fd</Extensions>
     </Filter>
     <Filter Include="Resource Files">
-      <UniqueIdentifier>{f95e44f5-cc79-45f1-bf0e-c6724df67164}</UniqueIdentifier>
+      <UniqueIdentifier>{1b0756d0-849e-47ea-a6fa-7019635fda40}</UniqueIdentifier>
       <Extensions>ico;cur;bmp;dlg;rc2;rct;bin;cnt;rtf;gif;jpg;jpeg;jpe</Extensions>
     </Filter>
   </ItemGroup>
   <ItemGroup>
-    <ClCompile Include="..\..\dlls\wpn_shared\disc_weapon_disc.cpp">
-      <Filter>Source Files\hl</Filter>
+    <ClCompile Include="..\CTF_FlagStatus.cpp">
+      <Filter>Source Files\quake</Filter>
+    </ClCompile>
+    <ClCompile Include="..\CTF_HudMessage.cpp">
+      <Filter>Source Files\quake</Filter>
+    </ClCompile>
+    <ClCompile Include="..\DMC_Teleporters.cpp">
+      <Filter>Source Files\quake</Filter>
     </ClCompile>
     <ClCompile Include="..\ev_hldm.cpp">
-      <Filter>Source Files\hl</Filter>
+      <Filter>Source Files\quake</Filter>
     </ClCompile>
-    <ClCompile Include="..\hl\hl_baseentity.cpp">
-      <Filter>Source Files\hl</Filter>
+    <ClCompile Include="..\quake\quake_baseentity.cpp">
+      <Filter>Source Files\quake</Filter>
     </ClCompile>
-    <ClCompile Include="..\hl\hl_events.cpp">
-      <Filter>Source Files\hl</Filter>
+    <ClCompile Include="..\quake\quake_events.cpp">
+      <Filter>Source Files\quake</Filter>
     </ClCompile>
-    <ClCompile Include="..\hl\hl_objects.cpp">
-      <Filter>Source Files\hl</Filter>
+    <ClCompile Include="..\..\dlls\quake_gun.cpp">
+      <Filter>Source Files\quake</Filter>
     </ClCompile>
-    <ClCompile Include="..\hl\hl_weapons.cpp">
-      <Filter>Source Files\hl</Filter>
+    <ClCompile Include="..\quake\quake_objects.cpp">
+      <Filter>Source Files\quake</Filter>
     </ClCompile>
-    <ClCompile Include="..\Ricochet_JumpPads.cpp">
-      <Filter>Source Files\hl</Filter>
+    <ClCompile Include="..\quake\quake_weapons.cpp">
+      <Filter>Source Files\quake</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\dlls\quake_weapons_all.cpp">
+      <Filter>Source Files\quake</Filter>
+    </ClCompile>
+    <ClCompile Include="..\studio_util.cpp">
+      <Filter>Source Files\quake</Filter>
+    </ClCompile>
+    <ClCompile Include="..\vgui_SpectatorPanel.cpp">
+      <Filter>Source Files\quake</Filter>
     </ClCompile>
     <ClCompile Include="..\ammo.cpp">
       <Filter>Source Files</Filter>
@@ -73,9 +88,6 @@
     <ClCompile Include="..\events.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="..\flashlight.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
     <ClCompile Include="..\GameStudioModelRenderer.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
@@ -95,6 +107,9 @@
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="..\hud_servers.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="..\hud_spectator.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="..\hud_update.cpp">
@@ -133,13 +148,13 @@
     <ClCompile Include="..\saytext.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
+    <ClCompile Include="..\scoreboard.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
     <ClCompile Include="..\status_icons.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="..\statusbar.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
-    <ClCompile Include="..\studio_util.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="..\StudioModelRenderer.cpp">
@@ -160,18 +175,6 @@
     <ClCompile Include="..\..\..\game_shared\vgui_checkbutton2.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="..\vgui_ConsolePanel.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
-    <ClCompile Include="..\vgui_ControlConfigPanel.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
-    <ClCompile Include="..\vgui_CustomObjects.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
-    <ClCompile Include="..\vgui_discobjects.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
     <ClCompile Include="..\..\..\game_shared\vgui_grid.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
@@ -187,12 +190,6 @@
     <ClCompile Include="..\..\..\game_shared\vgui_loadtga.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="..\vgui_MOTDWindow.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
-    <ClCompile Include="..\vgui_SchemeManager.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
     <ClCompile Include="..\vgui_ScorePanel.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
@@ -205,7 +202,7 @@
     <ClCompile Include="..\..\..\game_shared\vgui_slider2.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="..\vgui_TeamFortressViewport.cpp">
+    <ClCompile Include="..\vgui_viewport.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="..\view.cpp">
@@ -215,6 +212,15 @@
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="..\voice_status.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="..\vgui_CustomObjects.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="..\vgui_MOTDWindow.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="..\vgui_SchemeManager.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
   </ItemGroup>
@@ -240,6 +246,12 @@
     <ClInclude Include="..\demo.h">
       <Filter>Header Files</Filter>
     </ClInclude>
+    <ClInclude Include="..\DMC_BSPFile.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="..\DMC_Teleporters.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
     <ClInclude Include="..\ev_hldm.h">
       <Filter>Header Files</Filter>
     </ClInclude>
@@ -262,6 +274,9 @@
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="..\hud_servers_priv.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="..\hud_spectator.h">
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="..\in_defs.h">
@@ -291,31 +306,37 @@
     <ClInclude Include="..\..\pm_shared\pm_shared.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="..\Ricochet_BSPFile.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="..\Ricochet_JumpPads.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="..\studio_util.h">
+    <ClInclude Include="..\..\dlls\quake_gun.h">
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="..\StudioModelRenderer.h">
       <Filter>Header Files</Filter>
     </ClInclude>
+    <ClInclude Include="..\util.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
     <ClInclude Include="..\util_vector.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="..\vgui_ConsolePanel.h">
+    <ClInclude Include="..\..\..\game_shared\vgui_checkbutton2.h">
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="..\vgui_ControlConfigPanel.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="..\vgui_discobjects.h">
+    <ClInclude Include="..\..\..\game_shared\vgui_grid.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\game_shared\vgui_helpers.h">
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="..\vgui_int.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\game_shared\vgui_listbox.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\game_shared\vgui_loadtga.h">
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="..\vgui_SchemeManager.h">
@@ -327,10 +348,16 @@
     <ClInclude Include="..\vgui_ServerBrowser.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="..\vgui_TeamFortressViewport.h">
+    <ClInclude Include="..\vgui_SpectatorPanel.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="..\vgui_viewport.h">
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="..\view.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="..\voice_status.h">
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="..\wrect.h">

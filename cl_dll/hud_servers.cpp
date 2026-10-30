@@ -1,3 +1,10 @@
+//========= Copyright © 1996-2002, Valve LLC, All rights reserved. ============
+//
+// Purpose: 
+//
+// $NoKeywords: $
+//=============================================================================
+
 // hud_servers.cpp
 #include "hud.h"
 #include "cl_util.h"
@@ -8,8 +15,10 @@
 #ifdef _WIN32
 #include <winsock.h>
 #else
+#define __cdecl
 #include <arpa/inet.h>
 #endif
+
 static int	context_id;
 
 // Default master server address in case we can't read any from valvecomm.lst file
@@ -627,9 +636,7 @@ int ServerListCompareFunc( CHudServers::server_t *p1, CHudServers::server_t *p2,
 
 	return retval;
 }
-#ifndef _WIN32
-#define __cdecl
-#endif
+
 static char g_fieldname[ 256 ];
 int __cdecl FnServerCompare(const void *elem1, const void *elem2 )
 {

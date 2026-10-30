@@ -1,6 +1,6 @@
 /***
 *
-*	Copyright (c) 1999, 2000 Valve LLC. All rights reserved.
+*	Copyright (c) 1996-2002, Valve LLC. All rights reserved.
 *	
 *	This product contains software technology licensed from Id 
 *	Software, Inc. ("Id Technology").  Id Technology (c) 1996 Id Software, Inc. 
@@ -22,12 +22,25 @@
 #include "cl_util.h"
 #include <string.h>
 #include "netadr.h"
-#include "vgui_SchemeManager.h"
+#include "vgui_int.h"
+#include "voice_status.h"
+
+#include "FileSystem.h"
 
 #include "interface.h"
+#include "vgui_SchemeManager.h"
+
+#ifdef _WIN32
+#include <windows.h>
+#endif
+
+CSysModule *g_pFileSystemModule = NULL;
+IFileSystem *g_pFileSystem = NULL;
+
+CSysModule *g_hTrackerModule = NULL;
 
 cl_enginefunc_t gEngfuncs;
-CHud gHUD	;
+CHud gHUD;
 TeamFortressViewport *gViewPort = NULL;
 
 extern "C"
@@ -36,11 +49,7 @@ extern "C"
 }
 
 #include "hud_servers.h"
-#include "vgui_int.h"
 
-CSysModule *g_hTrackerModule = NULL;
-#ifdef _WIN32
-#endif
 void InitInput (void);
 void EV_HookEvents( void );
 void IN_Commands( void );
@@ -67,7 +76,8 @@ int EXPORT HUD_ConnectionlessPacket( struct netadr_s *net_from, const char *args
 int EXPORT HUD_GetHullBounds( int hullnumber, float *mins, float *maxs );
 void EXPORT HUD_Frame( double time );
 void EXPORT HUD_PostRunCmd( struct local_state_s *from, struct local_state_s *to, struct usercmd_s *cmd, int runfuncs, double time, unsigned int random_seed );
-void	EXPORT HUD_VoiceStatus(int entindex, qboolean bTalking);
+void EXPORT HUD_VoiceStatus(int entindex, qboolean bTalking);
+void	EXPORT HUD_DirectorMessage( int iSize, void *pbuf );
 }
 
 /*
@@ -84,13 +94,13 @@ int EXPORT HUD_GetHullBounds( int hullnumber, float *mins, float *maxs )
 	switch ( hullnumber )
 	{
 	case 0:				// Normal player
-		mins = Vector(-16, -16, -36);
-		maxs = Vector(16, 16, 36);
+		mins = Vector(-16, -16, -32);
+		maxs = Vector(16, 16, 32);
 		iret = 1;
 		break;
 	case 1:				// Crouched player
-		mins = Vector(-16, -16, -18 );
-		maxs = Vector(16, 16, 18 );
+		mins = Vector(-16, -16, -32);
+		maxs = Vector(16, 16, 32);
 		iret = 1;
 		break;
 	case 2:				// Point based hull
@@ -151,6 +161,46 @@ int EXPORT Initialize( cl_enginefunc_t *pEnginefuncs, int iVersion )
 	memcpy(&gEngfuncs, pEnginefuncs, sizeof(cl_enginefunc_t));
 
 	EV_HookEvents();
+	
+	// Determine which filesystem to use.
+#if defined ( _WIN32 )
+	const char *szFsModule = "filesystem_stdio.dll";
+#elif defined(OSX)
+	const char *szFsModule = "filesystem_stdio.dylib";	
+#elif defined(LINUX)
+	const char *szFsModule = "filesystem_stdio.so";
+#else
+#error
+#endif
+
+
+	char szFSDir[MAX_PATH];
+	szFSDir[0] = 0;
+	if ( gEngfuncs.COM_ExpandFilename( szFsModule, szFSDir, sizeof( szFSDir ) ) == FALSE )
+	{
+		return false;
+	}
+	
+	// Get filesystem interface.
+	g_pFileSystemModule = Sys_LoadModule( szFSDir );
+	assert( g_pFileSystemModule );
+	if( !g_pFileSystemModule )
+	{
+		return false;
+	}
+
+	CreateInterfaceFn fileSystemFactory = Sys_GetFactory( g_pFileSystemModule );
+	if( !fileSystemFactory )
+	{
+		return false;
+	}
+
+	g_pFileSystem = ( IFileSystem * )fileSystemFactory( FILESYSTEM_INTERFACE_VERSION, NULL );
+	assert( g_pFileSystem );
+	if( !g_pFileSystem )
+	{
+		return false;
+	}
 
 	return 1;
 }
@@ -190,6 +240,7 @@ int EXPORT HUD_Init( void )
 	InitInput();
 	gHUD.Init();
 	Scheme_Init();
+
 	return 1;
 }
 
@@ -226,8 +277,6 @@ returns 1 if anything has been changed, 0 otherwise.
 
 int EXPORT HUD_UpdateClientData(client_data_t *pcldata, float flTime )
 {
-	IN_Commands();
-	
 	return gHUD.UpdateClientData(pcldata, flTime );
 }
 
@@ -245,7 +294,6 @@ int EXPORT HUD_Reset( void )
 	return 1;
 }
 
-
 /*
 ==========================
 HUD_Frame
@@ -256,10 +304,13 @@ Called by engine every frame that client .dll is loaded
 
 void EXPORT HUD_Frame( double time )
 {
+	IN_Commands();
+
 	ServersThink( time );
 
 	GetClientVoiceMgr()->Frame(time);
 }
+
 
 /*
 ==========================
@@ -272,4 +323,17 @@ Called when a player starts or stops talking.
 void EXPORT HUD_VoiceStatus(int entindex, qboolean bTalking)
 {
 	GetClientVoiceMgr()->UpdateSpeakerStatus(entindex, bTalking);
+}
+
+/*
+==========================
+HUD_DirectorMessage
+
+Called when a director event message was received
+==========================
+*/
+
+void EXPORT HUD_DirectorMessage( int iSize, void *pbuf )
+{
+	 gHUD.m_Spectator.DirectorMessage( iSize, pbuf );
 }

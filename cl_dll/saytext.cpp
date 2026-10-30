@@ -1,6 +1,6 @@
 /***
 *
-*	Copyright (c) 1999, Valve LLC. All rights reserved.
+*	Copyright (c) 1996-2002, Valve LLC. All rights reserved.
 *	
 *	This product contains software technology licensed from Id 
 *	Software, Inc. ("Id Technology").  Id Technology (c) 1996 Id Software, Inc. 
@@ -26,6 +26,7 @@
 #include <stdio.h>
 
 extern float *GetClientColor( int clientIndex );
+extern hud_player_info_t	g_PlayerInfoList[MAX_PLAYERS+1];
 
 #define MAX_LINES	5
 #define MAX_CHARS_PER_LINE	256  /* it can be less than this, depending on char size */
@@ -33,7 +34,6 @@ extern float *GetClientColor( int clientIndex );
 // allow 20 pixels on either side of the text
 #define MAX_LINE_WIDTH  ( ScreenWidth - 40 )
 #define LINE_START  10
-static float SCROLL_SPEED = 5;
 
 static char g_szLineBuffer[ MAX_LINES + 1 ][ MAX_CHARS_PER_LINE ];
 static float *g_pflNameColors[ MAX_LINES + 1 ];
@@ -53,7 +53,8 @@ int CHudSayText :: Init( void )
 
 	InitHUDData();
 
-	CVAR_CREATE( "hud_saytext_time", "5", 0 );
+	m_HUD_saytext =			gEngfuncs.pfnRegisterVariable( "hud_saytext", "1", 0 );
+	m_HUD_saytext_time =	gEngfuncs.pfnRegisterVariable( "hud_saytext_time", "5", 0 );
 
 	return 1;
 }
@@ -64,6 +65,8 @@ void CHudSayText :: InitHUDData( void )
 	memset( g_szLineBuffer, 0, sizeof g_szLineBuffer );
 	memset( g_pflNameColors, 0, sizeof g_pflNameColors );
 	memset( g_iNameLengths, 0, sizeof g_iNameLengths );
+
+	m_iFlags |= HUD_INTERMISSION; // is always drawn during an intermission
 }
 
 int CHudSayText :: VidInit( void )
@@ -95,16 +98,16 @@ int CHudSayText :: Draw( float flTime )
 	int y = Y_START;
 
 	// make sure the scrolltime is within reasonable bounds,  to guard against the clock being reset
-	flScrollTime = min( flScrollTime, flTime + SCROLL_SPEED );
+	flScrollTime = min( flScrollTime, flTime + m_HUD_saytext_time->value );
 
 	// make sure the scrolltime is within reasonable bounds,  to guard against the clock being reset
-	flScrollTime = min( flScrollTime, flTime + SCROLL_SPEED );
+	flScrollTime = min( flScrollTime, flTime + m_HUD_saytext_time->value );
 
 	if ( flScrollTime <= flTime )
 	{
 		if ( *g_szLineBuffer[0] )
 		{
-			flScrollTime = flTime + SCROLL_SPEED;
+			flScrollTime = flTime + m_HUD_saytext_time->value;
 			// push the console up
 			ScrollTextUp();
 		}
@@ -127,6 +130,7 @@ int CHudSayText :: Draw( float flTime )
 				strncpy( buf, g_szLineBuffer[i], min(g_iNameLengths[i], MAX_PLAYER_NAME_LENGTH+32) );
 				buf[ min(g_iNameLengths[i], MAX_PLAYER_NAME_LENGTH+31) ] = 0;
 				gEngfuncs.pfnDrawSetTextColor( g_pflNameColors[i][0], g_pflNameColors[i][1], g_pflNameColors[i][2] );
+				
 				int x = DrawConsoleString( LINE_START, y, buf );
 
 				// color is reset after each string draw
@@ -201,17 +205,16 @@ void CHudSayText :: SayTextPrint( const char *pszBuf, int iBufSize, int clientIn
 	// Set scroll time
 	if ( i == 0 )
 	{
-		SCROLL_SPEED = CVAR_GET_FLOAT( "hud_saytext_time" );
-		flScrollTime = gHUD.m_flTime + SCROLL_SPEED;
+		flScrollTime = gHUD.m_flTime + m_HUD_saytext_time->value;
 	}
 
 	m_iFlags |= HUD_ACTIVE;
 	PlaySound( "misc/talk.wav", 1 );
 
 	if ( ScreenHeight >= 480 )
-		Y_START = ScreenHeight - 45;
+		Y_START = ScreenHeight - 138;
 	else
-		Y_START = ScreenHeight - 35;
+		Y_START = ScreenHeight - 70;
 	Y_START -= (line_height * (MAX_LINES+1));
 
 }

@@ -1,17 +1,10 @@
-/***
-*
-*	Copyright (c) 1999, 2000 Valve LLC. All rights reserved.
-*	
-*	This product contains software technology licensed from Id 
-*	Software, Inc. ("Id Technology").  Id Technology (c) 1996 Id Software, Inc. 
-*	All Rights Reserved.
-*
-*   Use, distribution, and modification of this source code and/or resulting
-*   object code is restricted to non-commercial enhancements to products from
-*   Valve LLC.  All other use, distribution, or modification is prohibited
-*   without written permission from Valve LLC.
-*
-****/
+//========= Copyright © 1996-2002, Valve LLC, All rights reserved. ============
+//
+// Purpose: 
+//
+// $NoKeywords: $
+//=============================================================================
+
 // Triangle rendering, if any
 
 #include "hud.h"
@@ -29,6 +22,11 @@ extern "C"
 	void EXPORT HUD_DrawNormalTriangles( void );
 	void EXPORT HUD_DrawTransparentTriangles( void );
 };
+
+extern float g_iFogColor[3];
+extern float g_iStartDist;
+extern float g_iEndDist;
+extern int g_iWaterLevel;
 
 //#define TEST_IT
 #if defined( TEST_IT )
@@ -96,6 +94,15 @@ void Draw_Triangles( void )
 
 #endif
 
+//Render fog ( duh ).
+void RenderFog ( void )
+{
+	//Not in water and we want fog.
+	bool bFog = g_iWaterLevel < 2 && g_iStartDist >= 0 && g_iEndDist >= 0;
+	gEngfuncs.pTriAPI->Fog ( g_iFogColor, g_iStartDist, g_iEndDist, bFog );
+}
+ 
+
 /*
 =================
 HUD_DrawNormalTriangles
@@ -105,10 +112,7 @@ Non-transparent triangles-- add them here
 */
 void EXPORT HUD_DrawNormalTriangles( void )
 {
-
-#if defined( TEST_IT )
-//	Draw_Triangles();
-#endif
+	gHUD.m_Spectator.DrawOverview();
 }
 
 /*
@@ -121,7 +125,5 @@ Render any triangles with transparent rendermode needs here
 void EXPORT HUD_DrawTransparentTriangles( void )
 {
 
-#if defined( TEST_IT )
-//	Draw_Triangles();
-#endif
+	RenderFog();
 }

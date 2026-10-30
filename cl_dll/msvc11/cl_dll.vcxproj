@@ -15,7 +15,7 @@
     </SccProjectName>
     <SccLocalPath>
     </SccLocalPath>
-    <ProjectGuid>{D117ACF2-3DD3-42EA-9105-F16130C238C1}</ProjectGuid>
+    <ProjectGuid>{61AD53CF-34B0-4551-A0B7-D21C06976DC3}</ProjectGuid>
   </PropertyGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.Default.props" />
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'" Label="Configuration">
@@ -26,7 +26,6 @@
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'" Label="Configuration">
     <ConfigurationType>DynamicLibrary</ConfigurationType>
     <UseOfMfc>false</UseOfMfc>
-    <CharacterSet>MultiByte</CharacterSet>
     <PlatformToolset>v110_xp</PlatformToolset>
   </PropertyGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.props" />
@@ -61,15 +60,14 @@
       <Optimization>Disabled</Optimization>
       <SuppressStartupBanner>true</SuppressStartupBanner>
       <WarningLevel>Level3</WarningLevel>
-      <MinimalRebuild>true</MinimalRebuild>
       <DebugInformationFormat>ProgramDatabase</DebugInformationFormat>
-      <AdditionalIncludeDirectories>..\..\;..\..\dlls;..\;..\..\..\game_shared;..\..\..\engine;..\..\..\public;..\..\..\common;..\..\pm_shared;..\..\..\utils\vgui\include;..\..\..\external;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
-      <PreprocessorDefinitions>WIN32;_DEBUG;_WINDOWS;CLIENT_DLL;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <AdditionalIncludeDirectories>..\..\..\public;..\..\engine;..\..\common;..\..\utils\vgui\include;..\..\dlls;..\..\..\engine;..\..\..\common;..\..\pm_shared;..\..\..\utils\vgui\include;..;..\..\..\game_shared;..\..\..\external;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <PreprocessorDefinitions>WIN32;_DEBUG;_WINDOWS;CLIENT_DLL;DMC_BUILD;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <AssemblerListingLocation>.\Debug\</AssemblerListingLocation>
       <BrowseInformation>true</BrowseInformation>
-      <PrecompiledHeaderOutputFile>.\Debug\client.pch</PrecompiledHeaderOutputFile>
-      <ObjectFileName>.\Debug\</ObjectFileName>
-      <ProgramDataBaseFileName>.\Debug\</ProgramDataBaseFileName>
+      <PrecompiledHeaderOutputFile>.\Release/client.pch</PrecompiledHeaderOutputFile>
+      <ObjectFileName>.\Release/</ObjectFileName>
+      <ProgramDataBaseFileName>.\Release/</ProgramDataBaseFileName>
     </ClCompile>
     <Midl>
       <SuppressStartupBanner>true</SuppressStartupBanner>
@@ -93,14 +91,14 @@
       <SubSystem>Windows</SubSystem>
       <OutputFile>.\Debug\client.dll</OutputFile>
       <ImportLibrary>.\Debug\client.lib</ImportLibrary>
-      <AdditionalDependencies>odbc32.lib;odbccp32.lib;winmm.lib;../../../utils/vgui/lib/win32_vc6/vgui.lib;wsock32.lib;..\..\..\lib\public\sdl2.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalDependencies>odbc32.lib;odbccp32.lib;winmm.lib;..\..\..\utils\vgui\lib\win32_vc6\vgui.lib;wsock32.lib;..\..\..\lib\public\sdl2.lib;%(AdditionalDependencies)</AdditionalDependencies>
       <IgnoreSpecificDefaultLibraries>LIBCMT;LIBC</IgnoreSpecificDefaultLibraries>
     </Link>
     <CustomBuildStep>
-      <Command>call ..\..\..\filecopy.bat $(TargetDir)$(TargetName).dll $(ProjectDir)..\..\..\..\game\ricochet\cl_dlls\$(TargetName).dll
-call ..\..\..\filecopy.bat $(TargetDir)$(TargetName).pdb $(ProjectDir)..\..\..\..\game\ricochet\cl_dlls\$(TargetName).pdb</Command>
+      <Command>call ..\..\..\filecopy.bat $(TargetDir)$(TargetName).dll $(ProjectDir)..\..\..\..\game\dmc\cl_dlls\$(TargetName).dll
+call ..\..\..\filecopy.bat $(TargetDir)$(TargetName).pdb $(ProjectDir)..\..\..\..\game\dmc\cl_dlls\$(TargetName).pdb</Command>
       <Message>Copying to cl_dlls</Message>
-      <Outputs>$(ProjectDir)..\..\..\..\game\ricochet\cl_dlls\$(InputName).dll;$(ProjectDir)..\..\..\..\game\ricochet\cl_dlls\$(InputName).pdb;%(Outputs)</Outputs>
+      <Outputs>$(ProjectDir)..\..\..\..\game\dmc\cl_dlls\$(InputName).dll;$(ProjectDir)..\..\..\..\game\dmc\cl_dlls\$(InputName).pdb;%(Outputs)</Outputs>
     </CustomBuildStep>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
@@ -112,8 +110,8 @@ call ..\..\..\filecopy.bat $(TargetDir)$(TargetName).pdb $(ProjectDir)..\..\..\.
       <Optimization>MaxSpeed</Optimization>
       <SuppressStartupBanner>true</SuppressStartupBanner>
       <WarningLevel>Level3</WarningLevel>
-      <AdditionalIncludeDirectories>..\..\;..\..\dlls;..\;..\..\..\game_shared;..\..\..\engine;..\..\..\public;..\..\..\common;..\..\pm_shared;..\..\..\utils\vgui\include;..\..\..\external;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
-      <PreprocessorDefinitions>WIN32;NDEBUG;_WINDOWS;CLIENT_DLL;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <AdditionalIncludeDirectories>..\..\utils\common;..\..\..\public;..\..\engine;..\..\common;..\..\utils\vgui\include;..\..\dlls;..\..\..\engine;..\..\..\common;..\..\pm_shared;..\..\..\utils\vgui\include;..;..\..\..\game_shared;..\..\..\external;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <PreprocessorDefinitions>WIN32;NDEBUG;_WINDOWS;CLIENT_DLL;DMC_BUILD;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <AssemblerListingLocation>.\Release\</AssemblerListingLocation>
       <PrecompiledHeaderOutputFile>.\Release\client.pch</PrecompiledHeaderOutputFile>
       <ObjectFileName>.\Release\</ObjectFileName>
@@ -141,24 +139,29 @@ call ..\..\..\filecopy.bat $(TargetDir)$(TargetName).pdb $(ProjectDir)..\..\..\.
       <SubSystem>Windows</SubSystem>
       <OutputFile>.\Release\client.dll</OutputFile>
       <ImportLibrary>.\Release\client.lib</ImportLibrary>
-      <AdditionalDependencies>winmm.lib;../../../utils/vgui/lib/win32_vc6/vgui.lib;wsock32.lib;..\..\..\lib\public\sdl2.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalDependencies>winmm.lib;..\..\..\utils\vgui\lib\win32_vc6\vgui.lib;wsock32.lib;..\..\..\lib\public\sdl2.lib;%(AdditionalDependencies)</AdditionalDependencies>
       <IgnoreSpecificDefaultLibraries>LIBCMTD;LIBCD</IgnoreSpecificDefaultLibraries>
     </Link>
     <CustomBuildStep>
-      <Command>call ..\..\..\filecopy.bat $(TargetDir)$(TargetName).dll $(ProjectDir)..\..\..\..\game\ricochet\cl_dlls\$(TargetName).dll
-call ..\..\..\filecopy.bat $(TargetDir)$(TargetName).pdb $(ProjectDir)..\..\..\..\game\ricochet\cl_dlls\$(TargetName).pdb</Command>
+      <Command>call ..\..\..\filecopy.bat $(TargetDir)$(TargetName).dll $(ProjectDir)..\..\..\..\game\dmc\cl_dlls\$(TargetName).dll
+call ..\..\..\filecopy.bat $(TargetDir)$(TargetName).pdb $(ProjectDir)..\..\..\..\game\dmc\cl_dlls\$(TargetName).pdb</Command>
       <Message>Copying to cl_dlls</Message>
-      <Outputs>$(ProjectDir)..\..\..\..\game\ricochet\cl_dlls\$(InputName).dll;$(ProjectDir)..\..\..\..\game\ricochet\cl_dlls\$(InputName).pdb;%(Outputs)</Outputs>
+      <Outputs>$(ProjectDir)..\..\..\..\game\dmc\cl_dlls\$(InputName).dll;$(ProjectDir)..\..\..\..\game\dmc\cl_dlls\$(InputName).pdb;%(Outputs)</Outputs>
     </CustomBuildStep>
   </ItemDefinitionGroup>
   <ItemGroup>
-    <ClCompile Include="..\..\dlls\wpn_shared\disc_weapon_disc.cpp" />
+    <ClCompile Include="..\CTF_FlagStatus.cpp" />
+    <ClCompile Include="..\CTF_HudMessage.cpp" />
+    <ClCompile Include="..\DMC_Teleporters.cpp" />
     <ClCompile Include="..\ev_hldm.cpp" />
-    <ClCompile Include="..\hl\hl_baseentity.cpp" />
-    <ClCompile Include="..\hl\hl_events.cpp" />
-    <ClCompile Include="..\hl\hl_objects.cpp" />
-    <ClCompile Include="..\hl\hl_weapons.cpp" />
-    <ClCompile Include="..\Ricochet_JumpPads.cpp" />
+    <ClCompile Include="..\quake\quake_baseentity.cpp" />
+    <ClCompile Include="..\quake\quake_events.cpp" />
+    <ClCompile Include="..\..\dlls\quake_gun.cpp" />
+    <ClCompile Include="..\quake\quake_objects.cpp" />
+    <ClCompile Include="..\quake\quake_weapons.cpp" />
+    <ClCompile Include="..\..\dlls\quake_weapons_all.cpp" />
+    <ClCompile Include="..\studio_util.cpp" />
+    <ClCompile Include="..\vgui_SpectatorPanel.cpp" />
     <ClCompile Include="..\ammo.cpp" />
     <ClCompile Include="..\ammo_secondary.cpp" />
     <ClCompile Include="..\ammohistory.cpp" />
@@ -170,7 +173,6 @@ call ..\..\..\filecopy.bat $(TargetDir)$(TargetName).pdb $(ProjectDir)..\..\..\.
     <ClCompile Include="..\entity.cpp" />
     <ClCompile Include="..\ev_common.cpp" />
     <ClCompile Include="..\events.cpp" />
-    <ClCompile Include="..\flashlight.cpp" />
     <ClCompile Include="..\GameStudioModelRenderer.cpp" />
     <ClCompile Include="..\geiger.cpp" />
     <ClCompile Include="..\health.cpp" />
@@ -178,6 +180,7 @@ call ..\..\..\filecopy.bat $(TargetDir)$(TargetName).pdb $(ProjectDir)..\..\..\.
     <ClCompile Include="..\hud_msg.cpp" />
     <ClCompile Include="..\hud_redraw.cpp" />
     <ClCompile Include="..\hud_servers.cpp" />
+    <ClCompile Include="..\hud_spectator.cpp" />
     <ClCompile Include="..\hud_update.cpp" />
     <ClCompile Include="..\in_camera.cpp" />
     <ClCompile Include="..\input.cpp" />
@@ -190,34 +193,34 @@ call ..\..\..\filecopy.bat $(TargetDir)$(TargetName).pdb $(ProjectDir)..\..\..\.
     <ClCompile Include="..\..\pm_shared\pm_math.c" />
     <ClCompile Include="..\..\pm_shared\pm_shared.c" />
     <ClCompile Include="..\saytext.cpp" />
+    <ClCompile Include="..\scoreboard.cpp">
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">true</ExcludedFromBuild>
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">true</ExcludedFromBuild>
+    </ClCompile>
     <ClCompile Include="..\status_icons.cpp" />
     <ClCompile Include="..\statusbar.cpp" />
-    <ClCompile Include="..\studio_util.cpp" />
     <ClCompile Include="..\StudioModelRenderer.cpp" />
     <ClCompile Include="..\text_message.cpp" />
     <ClCompile Include="..\train.cpp" />
     <ClCompile Include="..\tri.cpp" />
     <ClCompile Include="..\util.cpp" />
     <ClCompile Include="..\..\..\game_shared\vgui_checkbutton2.cpp" />
-    <ClCompile Include="..\vgui_ConsolePanel.cpp" />
-    <ClCompile Include="..\vgui_ControlConfigPanel.cpp" />
-    <ClCompile Include="..\vgui_CustomObjects.cpp" />
-    <ClCompile Include="..\vgui_discobjects.cpp" />
     <ClCompile Include="..\..\..\game_shared\vgui_grid.cpp" />
     <ClCompile Include="..\..\..\game_shared\vgui_helpers.cpp" />
     <ClCompile Include="..\vgui_int.cpp" />
     <ClCompile Include="..\..\..\game_shared\vgui_listbox.cpp" />
     <ClCompile Include="..\..\..\game_shared\vgui_loadtga.cpp" />
-    <ClCompile Include="..\vgui_MOTDWindow.cpp" />
-    <ClCompile Include="..\vgui_SchemeManager.cpp" />
     <ClCompile Include="..\vgui_ScorePanel.cpp" />
     <ClCompile Include="..\..\..\game_shared\vgui_scrollbar2.cpp" />
     <ClCompile Include="..\vgui_ServerBrowser.cpp" />
     <ClCompile Include="..\..\..\game_shared\vgui_slider2.cpp" />
-    <ClCompile Include="..\vgui_TeamFortressViewport.cpp" />
+    <ClCompile Include="..\vgui_viewport.cpp" />
     <ClCompile Include="..\view.cpp" />
     <ClCompile Include="..\..\..\game_shared\voice_banmgr.cpp" />
     <ClCompile Include="..\voice_status.cpp" />
+    <ClCompile Include="..\vgui_CustomObjects.cpp" />
+    <ClCompile Include="..\vgui_MOTDWindow.cpp" />
+    <ClCompile Include="..\vgui_SchemeManager.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="..\ammo.h" />
@@ -227,6 +230,8 @@ call ..\..\..\filecopy.bat $(TargetDir)$(TargetName).pdb $(ProjectDir)..\..\..\.
     <ClInclude Include="..\cl_util.h" />
     <ClInclude Include="..\com_weapons.h" />
     <ClInclude Include="..\demo.h" />
+    <ClInclude Include="..\DMC_BSPFile.h" />
+    <ClInclude Include="..\DMC_Teleporters.h" />
     <ClInclude Include="..\ev_hldm.h" />
     <ClInclude Include="..\eventscripts.h" />
     <ClInclude Include="..\GameStudioModelRenderer.h" />
@@ -235,6 +240,7 @@ call ..\..\..\filecopy.bat $(TargetDir)$(TargetName).pdb $(ProjectDir)..\..\..\.
     <ClInclude Include="..\hud_iface.h" />
     <ClInclude Include="..\hud_servers.h" />
     <ClInclude Include="..\hud_servers_priv.h" />
+    <ClInclude Include="..\hud_spectator.h" />
     <ClInclude Include="..\in_defs.h" />
     <ClInclude Include="..\kbutton.h" />
     <ClInclude Include="..\..\..\common\parsemsg.h" />
@@ -244,20 +250,24 @@ call ..\..\..\filecopy.bat $(TargetDir)$(TargetName).pdb $(ProjectDir)..\..\..\.
     <ClInclude Include="..\..\pm_shared\pm_materials.h" />
     <ClInclude Include="..\..\pm_shared\pm_movevars.h" />
     <ClInclude Include="..\..\pm_shared\pm_shared.h" />
-    <ClInclude Include="..\Ricochet_BSPFile.h" />
-    <ClInclude Include="..\Ricochet_JumpPads.h" />
-    <ClInclude Include="..\studio_util.h" />
+    <ClInclude Include="..\..\dlls\quake_gun.h" />
     <ClInclude Include="..\StudioModelRenderer.h" />
+    <ClInclude Include="..\util.h" />
     <ClInclude Include="..\util_vector.h" />
-    <ClInclude Include="..\vgui_ConsolePanel.h" />
+    <ClInclude Include="..\..\..\game_shared\vgui_checkbutton2.h" />
     <ClInclude Include="..\vgui_ControlConfigPanel.h" />
-    <ClInclude Include="..\vgui_discobjects.h" />
+    <ClInclude Include="..\..\..\game_shared\vgui_grid.h" />
+    <ClInclude Include="..\..\..\game_shared\vgui_helpers.h" />
     <ClInclude Include="..\vgui_int.h" />
+    <ClInclude Include="..\..\..\game_shared\vgui_listbox.h" />
+    <ClInclude Include="..\..\..\game_shared\vgui_loadtga.h" />
     <ClInclude Include="..\vgui_SchemeManager.h" />
     <ClInclude Include="..\vgui_ScorePanel.h" />
     <ClInclude Include="..\vgui_ServerBrowser.h" />
-    <ClInclude Include="..\vgui_TeamFortressViewport.h" />
+    <ClInclude Include="..\vgui_SpectatorPanel.h" />
+    <ClInclude Include="..\vgui_viewport.h" />
     <ClInclude Include="..\view.h" />
+    <ClInclude Include="..\voice_status.h" />
     <ClInclude Include="..\wrect.h" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />

@@ -1,18 +1,13 @@
-/***
-*
-*	Copyright (c) 1999, 2000 Valve LLC. All rights reserved.
-*	
-*	This product contains software technology licensed from Id 
-*	Software, Inc. ("Id Technology").  Id Technology (c) 1996 Id Software, Inc. 
-*	All Rights Reserved.
-*
-*   Use, distribution, and modification of this source code and/or resulting
-*   object code is restricted to non-commercial enhancements to products from
-*   Valve LLC.  All other use, distribution, or modification is prohibited
-*   without written permission from Valve LLC.
-*
-****/
-// inputw32.cpp-- windows 95/98/nt mouse and joystick code
+//========= Copyright © 1996-2002, Valve LLC, All rights reserved. ============
+//
+// Purpose: 
+//
+// $NoKeywords: $
+//=============================================================================
+
+// in_win.c -- windows 95 mouse and joystick code
+// 02/21/97 JCB Added extended DirectInput code to support external controllers.
+
 #include "port.h"
 #include <SDL2/SDL_mouse.h>
 #include <SDL2/SDL_gamecontroller.h>
@@ -29,6 +24,11 @@
 #include "../public/keydefs.h"
 #include "view.h"
 #include "Exports.h"
+/*#ifdef _WIN32
+#define CL_DLLEXPORT EXPORT
+#else
+#define CL_DLLEXPORT __attribute__ ((visibility("default")))
+#endif*/
 
 #define MOUSE_BUTTON_COUNT 5
 
@@ -117,9 +117,10 @@ DWORD	pdwRawValue[ JOY_MAX_AXES ];
 DWORD		joy_oldbuttonstate, joy_oldpovstate;
 
 int			joy_id;
+DWORD		joy_flags;
 DWORD		joy_numbuttons;
-SDL_GameController *s_pJoystick = NULL;
 
+SDL_GameController *s_pJoystick = NULL;
 
 // none of these cvars are saved over a session
 // this means that advanced controller configuration needs to be executed
@@ -355,7 +356,6 @@ void IN_ScaleMouse( float *x, float *y )
 IN_MouseMove
 ===========
 */
-bool bCanMoveMouse ( void );
 void IN_MouseMove ( float frametime, usercmd_t *cmd)
 {
 	int		mx, my;
@@ -368,12 +368,9 @@ void IN_MouseMove ( float frametime, usercmd_t *cmd)
 		V_StopPitchDrift ();
 	}
 
-	// Ricochet: Don't let them move the mouse when they're in spectator mode
-	int iSpectator = !bCanMoveMouse();
-
 	//jjb - this disbles normal mouse control if the user is trying to 
 	//      move the camera, or if the mouse cursor is visible or if we're in intermission
-	if ( !iMouseInUse && !gHUD.m_iIntermission && !g_iVisibleMouse && !iSpectator )
+	if ( !iMouseInUse && !gHUD.m_iIntermission && !g_iVisibleMouse )
 	{
 		int deltaX, deltaY;
 		SDL_GetRelativeMouseState( &deltaX, &deltaY );
@@ -535,7 +532,6 @@ void IN_StartupJoystick (void)
 	{
 		gEngfuncs.Con_DPrintf ("joystick not found -- driver not present\n\n");
 	}
-	
 }
 
 int RawValuePointer (int axis)
@@ -554,7 +550,6 @@ int RawValuePointer (int axis)
 		
 	}
 }
-
 
 /*
 ===========
@@ -615,7 +610,6 @@ void Joy_AdvancedUpdate_f (void)
 		dwAxisMap[JOY_AXIS_V] = dwTemp & 0x0000000f;
 		dwControlMap[JOY_AXIS_V] = dwTemp & JOY_RELATIVE_AXIS;
 	}
-
 }
 
 
@@ -710,7 +704,6 @@ IN_JoyMove
 */
 void IN_JoyMove ( float frametime, usercmd_t *cmd )
 {
-#ifdef _WIN32
 	float	speed, aspeed;
 	float	fAxisValue, fTemp;
 	int		i;
@@ -891,7 +884,6 @@ void IN_JoyMove ( float frametime, usercmd_t *cmd )
 		viewangles[PITCH] = -cl_pitchup->value;
 
 	gEngfuncs.SetViewAngles( (float *)viewangles );
-#endif
 }
 
 /*

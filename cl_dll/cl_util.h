@@ -1,6 +1,6 @@
 /***
 *
-*	Copyright (c) 1999, 2000 Valve LLC. All rights reserved.
+*	Copyright (c) 1996-2002, Valve LLC. All rights reserved.
 *	
 *	This product contains software technology licensed from Id 
 *	Software, Inc. ("Id Technology").  Id Technology (c) 1996 Id Software, Inc. 
@@ -13,7 +13,7 @@
 *
 ****/
 //
-// util.h
+// cl_util.h
 //
 
 #include "cvardef.h"
@@ -25,7 +25,8 @@
 
 #include <stdio.h> // for safe_sprintf()
 #include <stdarg.h> // "
-#include <string.h>
+#include <string.h> // for safe_strcpy()
+
 
 // Macros to hook function calls into the HUD object
 #define HOOK_MESSAGE(x) gEngfuncs.pfnHookUserMsg(#x, __MsgFunc_##x );
@@ -70,6 +71,14 @@ inline struct cvar_s *CVAR_CREATE( const char *cv, const char *val, const int fl
 #define ScreenHeight (gHUD.m_scrinfo.iHeight)
 // ScreenWidth returns the width of the screen, in pixels
 #define ScreenWidth (gHUD.m_scrinfo.iWidth)
+
+// Use this to set any co-ords in 640x480 space
+#define XRES(x)		((int)(float(x)  * ((float)ScreenWidth / 640.0f) + 0.5f))
+#define YRES(y)		((int)(float(y)  * ((float)ScreenHeight / 480.0f) + 0.5f))
+
+// use this to project world coordinates to screen coordinates
+#define XPROJECT(x)	( (1.0f+(x))*ScreenWidth*0.5f )
+#define YPROJECT(y) ( (1.0f-(y))*ScreenHeight*0.5f )
 
 #define GetScreenInfo (*gEngfuncs.pfnGetScreenInfo)
 #define ServerCmd (*gEngfuncs.pfnServerCmd)

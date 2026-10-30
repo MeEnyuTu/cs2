@@ -1,6 +1,7 @@
-/***
+/****
 *
-*	Copyright (c) 1999, 2000, Valve LLC. All rights reserved.
+*
+*	Copyright (c) 1996-2002, Valve LLC. All rights reserved.
 *	
 *	This product contains software technology licensed from Id 
 *	Software, Inc. ("Id Technology").  Id Technology (c) 1996 Id Software, Inc. 
@@ -21,17 +22,17 @@
 #include "entity_types.h"
 #include "studio_event.h" // def. of mstudioevent_t
 #include "r_efx.h"
+#include "usercmd.h"
 #include "event_api.h"
 #include "pm_defs.h"
+#include "pm_shared.h"
 #include "pmtrace.h"
-
-#include <string.h>
-
-extern vec3_t v_origin;
-extern int	iPrevRenderState;
-extern int  iRenderStateChanged;
+#include "voice_status.h"
 
 void Game_AddObjects( void );
+
+
+extern vec3_t v_origin;
 
 extern "C" 
 {
@@ -64,6 +65,20 @@ int EXPORT HUD_AddEntity( int type, struct cl_entity_s *ent, const char *modelna
 		break;
 	}
 
+	// each frame every entity passes this function, so the overview hooks it to filter the overview entities
+	// in spectator mode:
+	// each frame every entity passes this function, so the overview hooks 
+	// it to filter the overview entities
+
+	if ( g_iUser1 )
+	{
+		gHUD.m_Spectator.AddOverviewEntity( type, ent, modelname );
+
+		if ( (	g_iUser1 == OBS_IN_EYE || gHUD.m_Spectator.m_pip->value == INSET_IN_EYE ) &&
+				ent->index == g_iUser2 )
+			return 0;	// don't draw the player we are following in eye
+
+	}
 	return 1;
 }
 
@@ -80,7 +95,7 @@ void EXPORT HUD_TxferLocalOverrides( struct entity_state_s *state, const struct 
 {
 	VectorCopy( client->origin, state->origin );
 
-	// Spectator
+	// Observer
 	state->iuser1 = client->iuser1;
 	state->iuser2 = client->iuser2;
 }
@@ -95,8 +110,6 @@ playerstate structure
 */
 void EXPORT HUD_ProcessPlayerState( struct entity_state_s *dst, const struct entity_state_s *src )
 {
-	cl_entity_t *player = gEngfuncs.GetLocalPlayer();	// Get the local player's index
-
 	// Copy in network data
 	VectorCopy( src->origin, dst->origin );
 	VectorCopy( src->angles, dst->angles );
@@ -121,15 +134,6 @@ void EXPORT HUD_ProcessPlayerState( struct entity_state_s *dst, const struct ent
 	dst->rendercolor.b			= src->rendercolor.b;
 	dst->renderfx				= src->renderfx;
 
-	// Hack to find out when our render state changes.
-	// Needed because we need the previous render state when we flip to thirdperson
-	if ( dst->number == player->index )
-	{
-		if ( iPrevRenderState != dst->renderfx )
-			iRenderStateChanged = TRUE;
-		iPrevRenderState			= dst->renderfx;
-	}
-
 	dst->framerate				= src->framerate;
 	dst->body					= src->body;
 
@@ -146,14 +150,13 @@ void EXPORT HUD_ProcessPlayerState( struct entity_state_s *dst, const struct ent
 	dst->playerclass			= src->playerclass;
 	dst->team					= src->team;
 	dst->colormap				= src->colormap;
-
 	// Save off some data so other areas of the Client DLL can get to it
+	cl_entity_t *player = gEngfuncs.GetLocalPlayer();	// Get the local player's index
 	if ( dst->number == player->index )
 	{
-		g_iPlayerClass = dst->playerclass;
-		g_iTeamNumber = dst->team;
 		g_iUser1 = src->iuser1;
 		g_iUser2 = src->iuser2;
+		g_iUser3 = src->iuser3;
 	}
 }
 
@@ -174,9 +177,6 @@ void EXPORT HUD_TxferPredictionData ( struct entity_state_s *ps, const struct en
 	ps->iStepLeft				= pps->iStepLeft;
 	ps->playerclass				= pps->playerclass;
 
-	ps->sequence				= pps->sequence;
-	ps->gaitsequence			= pps->gaitsequence;
-
 	pcd->viewmodel				= ppcd->viewmodel;
 	pcd->m_iId					= ppcd->m_iId;
 	pcd->ammo_shells			= ppcd->ammo_shells;
@@ -191,16 +191,215 @@ void EXPORT HUD_TxferPredictionData ( struct entity_state_s *ps, const struct en
 
 	pcd->deadflag				= ppcd->deadflag;
 
-	// Spectator
+	// Observer
 	pcd->iuser1					= ppcd->iuser1;
 	pcd->iuser2					= ppcd->iuser2;
 
+	if ( gEngfuncs.IsSpectateOnly() )
+	{
+		// in specator mode we tell the engine who we want to spectate and how
+		// iuser3 is not used for duck prevention (since the spectator can't duck at all)
+		pcd->iuser1 = g_iUser1;	// observer mode
+		pcd->iuser2 = g_iUser2; // first target
+		pcd->iuser3 = g_iUser3; // second target
+	}
+	// m_iQuakeItems
+	pcd->iuser3					= ppcd->iuser3;
+	// m_iQuakeWeapon #
 	pcd->fuser1					= ppcd->fuser1;
+	// m_iNailIndex
 	pcd->fuser2					= ppcd->fuser2;
+	// m_iRuneStatus
 	pcd->fuser3					= ppcd->fuser3;
 
 	memcpy( wd, pwd, 32 * sizeof( weapon_data_t ) );
 }
+
+/*
+//#define TEST_IT
+#if defined( TEST_IT )
+
+cl_entity_t mymodel[9];
+
+void MoveModel( void )
+{
+	cl_entity_t *player;
+	int i, j;
+	int modelindex;
+	struct model_s *mod;
+
+	// Load it up with some bogus data
+	player = gEngfuncs.GetLocalPlayer();
+	if ( !player )
+		return;
+
+	mod = gEngfuncs.CL_LoadModel( "models/sentry3.mdl", &modelindex );
+	for ( i = 0; i < 3; i++ )
+	{
+		for ( j = 0; j < 3; j++ )
+		{
+			// Don't draw over ourself...
+			if ( ( i == 1 ) && ( j == 1 ) )
+				continue;
+
+			mymodel[ i * 3 + j ] = *player;
+
+			mymodel[ i * 3 + j ].player = 0;
+
+			mymodel[ i * 3 + j ].model = mod;
+			mymodel[ i * 3 + j ].curstate.modelindex = modelindex;
+		
+				// Move it out a bit
+			mymodel[ i * 3 + j ].origin[0] = player->origin[0] + 50 * ( 1 - i );
+			mymodel[ i * 3 + j ].origin[1] = player->origin[1] + 50 * ( 1 - j );
+
+			gEngfuncs.CL_CreateVisibleEntity( ET_NORMAL, &mymodel[i*3+j] );
+		}
+	}
+
+}
+
+#endif
+
+//#define TRACE_TEST
+#if defined( TRACE_TEST )
+
+extern int hitent;
+
+cl_entity_t hit;
+
+void TraceModel( void )
+{
+	cl_entity_t *ent;
+
+	if ( hitent <= 0 )
+		return;
+
+	// Load it up with some bogus data
+	ent = gEngfuncs.GetEntityByIndex( hitent );
+	if ( !ent )
+		return;
+
+	hit = *ent;
+	//hit.curstate.rendermode = kRenderTransTexture;
+	//hit.curstate.renderfx = kRenderFxGlowShell;
+	//hit.curstate.renderamt = 100;
+
+	hit.origin[2] += 40;
+
+	gEngfuncs.CL_CreateVisibleEntity( ET_NORMAL, &hit );
+}
+
+#endif
+*/
+
+/*
+void ParticleCallback( struct particle_s *particle, float frametime )
+{
+	int i;
+
+	for ( i = 0; i < 3; i++ )
+	{
+		particle->org[ i ] += particle->vel[ i ] * frametime;
+	}
+}
+
+void Particles( void )
+{
+	static float lasttime;
+	float curtime;
+	
+	curtime = gEngfuncs.GetClientTime();
+
+	if ( ( curtime - lasttime ) < 10.0 )
+		return;
+
+	lasttime = curtime;
+
+	// Create a few particles
+	particle_t *p;
+	int i, j;
+
+	for ( i = 0; i < 100; i++ )
+	{
+		p = gEngfuncs.pEfxAPI->R_AllocParticle( ParticleCallback );
+		if ( !p )
+			break;
+
+		for ( j = 0; j < 3; j++ )
+		{
+			p->org[ j ] = v_origin[ j ];
+			p->vel[ j ] = gEngfuncs.pfnRandomFloat( -100.0, 100.0 );
+		}
+
+		p->color = gEngfuncs.pfnRandomLong( 0, 255 );
+		gEngfuncs.pEfxAPI->R_GetPackedColor( &p->packedColor, p->color );
+
+		// p->die is set to current time so all you have to do is add an additional time to it
+		p->die += 5.0;
+	}
+}
+*/
+
+/*
+void TempEntCallback ( struct tempent_s *ent, float frametime, float currenttime )
+{
+	int i;
+
+	for ( i = 0; i < 3; i++ )
+	{
+		ent->entity.curstate.origin[ i ] += ent->entity.baseline.origin[ i ] * frametime;
+	}
+}
+
+void TempEnts( void )
+{
+	static float lasttime;
+	float curtime;
+	
+	curtime = gEngfuncs.GetClientTime();
+
+	if ( ( curtime - lasttime ) < 10.0 )
+		return;
+
+	lasttime = curtime;
+
+	TEMPENTITY *p;
+	int i, j;
+	struct model_s *mod;
+	vec3_t origin;
+	int index;
+
+	mod = gEngfuncs.CL_LoadModel( "sprites/laserdot.spr", &index );
+
+	for ( i = 0; i < 100; i++ )
+	{
+		for ( j = 0; j < 3; j++ )
+		{
+			origin[ j ] = v_origin[ j ];
+			if ( j != 2 )
+			{
+				origin[ j ] += 75;
+			}
+		}
+
+		p = gEngfuncs.pEfxAPI->CL_TentEntAllocCustom( (float *)&origin, mod, 0, TempEntCallback );
+		if ( !p )
+			break;
+
+		for ( j = 0; j < 3; j++ )
+		{
+			p->entity.curstate.origin[ j ] = origin[ j ];
+
+			// Store velocity in baseline origin
+			p->entity.baseline.origin[ j ] = gEngfuncs.pfnRandomFloat( -100, 100 );
+		}
+
+		// p->die is set to current time so all you have to do is add an additional time to it
+		p->die += 10.0;
+	}
+}
+*/
 
 /*
 =========================
@@ -214,7 +413,21 @@ void EXPORT HUD_CreateEntities( void )
 	// e.g., create a persistent cl_entity_t somewhere.
 	// Load an appropriate model into it ( gEngfuncs.CL_LoadModel )
 	// Call gEngfuncs.CL_CreateVisibleEntity to add it to the visedicts list
+/*
+#if defined( TEST_IT )
+	MoveModel();
+#endif
 
+#if defined( TRACE_TEST )
+	TraceModel();
+#endif
+*/
+/*
+	Particles();
+*/
+/*
+	TempEnts();
+*/
 	// Add in any game specific objects
 	Game_AddObjects();
 
@@ -587,9 +800,15 @@ void EXPORT HUD_TempEntUpdate (
 
 			if ( pTemp->flags & FTENT_SMOKETRAIL )
 			{
-				gEngfuncs.pEfxAPI->R_RocketTrail (pTemp->entity.prevstate.origin, pTemp->entity.origin, 1);
+				if ( pTemp->entity.baseline.sequence == 69 ) // Little smoke
+					gEngfuncs.pEfxAPI->R_RocketTrail ( pTemp->entity.prevstate.origin, pTemp->entity.origin, 1 );
+				else if ( pTemp->entity.baseline.sequence == 70 ) // Rocket Powered smoke ( heh? )
+					gEngfuncs.pEfxAPI->R_RocketTrail ( pTemp->entity.prevstate.origin, pTemp->entity.origin, 0 );
+				else
+					gEngfuncs.pEfxAPI->R_RocketTrail ( pTemp->entity.prevstate.origin, pTemp->entity.origin, 2 );
 			}
 
+		
 			if ( pTemp->flags & FTENT_GRAVITY )
 				pTemp->entity.baseline.origin[2] += gravity;
 			else if ( pTemp->flags & FTENT_SLOWGRAVITY )

@@ -1,6 +1,6 @@
 /***
 *
-*	Copyright (c) 1999, 2000 Valve LLC. All rights reserved.
+*	Copyright (c) 1996-2002, Valve LLC. All rights reserved.
 *	
 *	This product contains software technology licensed from Id 
 *	Software, Inc. ("Id Technology").  Id Technology (c) 1996 Id Software, Inc. 
@@ -90,7 +90,7 @@ char *CHudTextMessage::LocaliseTextString( const char *msg, char *dst_buffer, in
 // As above, but with a local static buffer
 char *CHudTextMessage::BufferedLocaliseTextString( const char *msg )
 {
-	char dst_buffer[1024];
+	static char dst_buffer[1024];
 	return LocaliseTextString( msg, dst_buffer, 1024 );
 }
 
@@ -166,13 +166,13 @@ int CHudTextMessage::MsgFunc_TextMsg( const char *pszName, int iSize, void *pbuf
 	msg_text = safe_strcpy( szBuf[0], msg_text, MSG_BUF_SIZE );
 
 	// keep reading strings and using C format strings for subsituting the strings into the localised text string
-	char *sstr1 = (char *)LookupString( READ_STRING() );
+	char *sstr1 = (char*)LookupString( READ_STRING() );
 	sstr1 = safe_strcpy( szBuf[1], sstr1 , MSG_BUF_SIZE );
 	StripEndNewlineFromString( sstr1 );  // these strings are meant for subsitution into the main strings, so cull the automatic end newlines
 	char *sstr2 = (char *)LookupString( READ_STRING() );
 	sstr2 = safe_strcpy( szBuf[2], sstr2 , MSG_BUF_SIZE );
 	StripEndNewlineFromString( sstr2 );
-	char *sstr3 =(char*)LookupString( READ_STRING() );
+	char *sstr3 = (char *)LookupString( READ_STRING() );
 	sstr3 = safe_strcpy( szBuf[3], sstr3 , MSG_BUF_SIZE );
 	StripEndNewlineFromString( sstr3 );
 	char *sstr4 = (char *)LookupString( READ_STRING() );

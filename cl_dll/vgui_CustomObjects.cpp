@@ -1,4 +1,4 @@
-//=========== (C) Copyright 1999 Valve, L.L.C. All rights reserved. ===========
+//=========== (C) Copyright 1996-2002 Valve, L.L.C. All rights reserved. ===========
 //
 // The copyright to the contents herein is the property of Valve, L.L.C.
 // The contents may be used and/or copied only with the written permission of
@@ -30,9 +30,10 @@
 #include "parsemsg.h"
 
 #include "vgui_int.h"
-#include "vgui_TeamFortressViewport.h"
+#include "vgui_viewport.h"
 #include "vgui_ServerBrowser.h"
-#include "vgui_loadtga.h"
+#include "VGUI_BitmapTGA.h"
+
 
 // Arrow filenames
 const char *sArrowFilenames[] =
@@ -43,31 +44,21 @@ const char *sArrowFilenames[] =
 	"arrowrt", 
 };
 
-// Get the name of TGA file, without a gamedir
-char *GetTGANameForRes(const char *pszName)
-{
-	int i;
-	char sz[256]; 
-	static char gd[256]; 
-	if (ScreenWidth < 640)
-		i = 320;
-	else
-		i = 640;
-	sprintf(sz, pszName, i);
-	sprintf(gd, "gfx/vgui/%s.tga", sz);
-	return gd;
-}
 
 //-----------------------------------------------------------------------------
 // Purpose: Loads a .tga file and returns a pointer to the VGUI tga object
 //-----------------------------------------------------------------------------
-BitmapTGA *LoadTGAForRes( const char* pImageName )
+BitmapTGA *LoadTGA( const char* pImageName )
 {
 	BitmapTGA	*pTGA;
 
 	char sz[256];
 	sprintf(sz, "%%d_%s", pImageName);
-	pTGA = vgui_LoadTGA(GetTGANameForRes(sz));
+
+	// Load the Image
+	FileInputStream* fis = new FileInputStream( GetVGUITGAName(sz), false );
+	pTGA = new BitmapTGA(fis,true);
+	fis->close();
 
 	return pTGA;
 }
@@ -120,7 +111,14 @@ void CommandButton::RecalculateText( void )
 
 	if ( m_cBoundKey != 0 )
 	{
-		sprintf( szBuf, "  %c  %s", m_cBoundKey, m_sMainText );
+		if ( m_cBoundKey == (char)255 )
+		{
+			strcpy( szBuf, m_sMainText );
+		}
+		else
+		{
+			sprintf( szBuf, "  %c  %s", m_cBoundKey, m_sMainText );
+		}
 		szBuf[MAX_BUTTON_SIZE-1] = 0;
 	}
 	else
@@ -265,28 +263,6 @@ void CommandButton::setParentMenu( CCommandMenu *pParentMenu )
 //===========================================================
 int ClassButton::IsNotValid()
 {
-	// If this is the main ChangeClass button, remove it if the player's only able to be civilians
-	if ( m_iPlayerClass == -1 )
-	{
-		if (gViewPort->GetValidClasses(g_iTeamNumber) == -1)
-			return true;
-
-		return false;
-	}
-
-	// Is it an illegal class?
-	if ((gViewPort->GetValidClasses(0) & sTFValidClassInts[ m_iPlayerClass ]) || (gViewPort->GetValidClasses(g_iTeamNumber) & sTFValidClassInts[ m_iPlayerClass ]))
-		return true;
-
-	// Only check current class if they've got autokill on
-	bool bAutoKill = CVAR_GET_FLOAT( "hud_classautokill" ) != 0;
-	if ( bAutoKill )
-	{	
-		// Is it the player's current class?
-		if ( (gViewPort->IsRandomPC() && m_iPlayerClass == PC_RANDOM) || (!gViewPort->IsRandomPC() && (m_iPlayerClass == g_iPlayerClass)) )
-			return true;
-	}
-
 	return false;
 }
 
@@ -295,14 +271,14 @@ int ClassButton::IsNotValid()
 CImageLabel::CImageLabel( const char* pImageName,int x,int y ) : Label( "", x,y )
 {
 	setContentFitted(true);
-	m_pTGA = LoadTGAForRes(pImageName);
+	m_pTGA = LoadTGA(pImageName);
 	setImage( m_pTGA );
 }
 
 CImageLabel::CImageLabel( const char* pImageName,int x,int y,int wide,int tall ) : Label( "", x,y,wide,tall )
 {
 	setContentFitted(true);
-	m_pTGA = LoadTGAForRes(pImageName);
+	m_pTGA = LoadTGA(pImageName);
 	setImage( m_pTGA );
 }
 
@@ -310,61 +286,16 @@ CImageLabel::CImageLabel( const char* pImageName,int x,int y,int wide,int tall )
 // Image size
 int CImageLabel::getImageWide( void )
 {
-	if( m_pTGA )
-	{
-		int iXSize, iYSize;
-		m_pTGA->getSize( iXSize, iYSize );
-		return iXSize;
-	}
-	else
-	{
-		return 1;
-	}
+	int iXSize, iYSize;
+	m_pTGA->getSize( iXSize, iYSize );
+	return iXSize;
 }
 
 int CImageLabel::getImageTall( void )
 {
-	if( m_pTGA )
-	{
-		int iXSize, iYSize;
-		m_pTGA->getSize( iXSize, iYSize );
-		return iYSize;
-	}
-	else
-	{
-		return 1;
-	}
-}
-
-void CImageLabel::LoadImage(const char * pImageName)
-{
-	if ( m_pTGA )
-		delete m_pTGA;
-
-	// Load the Image
-	m_pTGA = LoadTGAForRes(pImageName);
-
-	if ( m_pTGA == NULL )
-	{
-		// we didn't find a matching image file for this resolution
-		// try to load file resolution independent
-
-		char sz[256];
-		sprintf(sz, "%s/%s",gEngfuncs.pfnGetGameDirectory(), pImageName );
-		FileInputStream* fis = new FileInputStream( sz, false );
-		m_pTGA = new BitmapTGA(fis,true);
-		fis->close();
-	}
-
-	if ( m_pTGA == NULL )
-		return;	// unable to load image
-	 	
-	int w,t;
-
-	m_pTGA->getSize( w, t );
-
-	setSize( XRES (w),YRES (t) );
-	setImage( m_pTGA );
+	int iXSize, iYSize;
+	m_pTGA->getSize( iXSize, iYSize );
+	return iYSize;
 }
 
 //===========================================================
@@ -385,7 +316,7 @@ CTFScrollButton::CTFScrollButton(int iArrow, const char* text,int x,int y,int wi
 	setFgColor(Scheme::sc_primary1);
 
 	// Load in the arrow
-	m_pTGA = LoadTGAForRes( sArrowFilenames[iArrow] );
+	m_pTGA = LoadTGA( sArrowFilenames[iArrow] );
 	setImage( m_pTGA );
 
 	// Highlight signal
@@ -395,8 +326,6 @@ CTFScrollButton::CTFScrollButton(int iArrow, const char* text,int x,int y,int wi
 
 void CTFScrollButton::paint( void )
 {
-	if (!m_pTGA)
-		return;
 	// draw armed button text in white
 	if ( isArmed() )
 	{
@@ -492,10 +421,5 @@ void CHandler_MenuButtonOver::cursorEntered(Panel *panel)
 void CMenuHandler_StringCommandClassSelect::actionPerformed(Panel* panel)
 {
 	CMenuHandler_StringCommand::actionPerformed( panel );
-
-	bool bAutoKill = CVAR_GET_FLOAT( "hud_classautokill" ) != 0;
-	if ( bAutoKill && g_iPlayerClass != 0 )
-		gEngfuncs.pfnClientCmd("kill");
 }
-
 

@@ -1,3 +1,9 @@
+//========= Copyright © 1996-2002, Valve LLC, All rights reserved. ============
+//
+// Purpose: 
+//
+// $NoKeywords: $
+//=============================================================================
 
 #include"vgui_int.h"
 #include<VGUI_Label.h>
@@ -16,7 +22,7 @@
 #include "const.h"
 #include "camera.h"
 #include "in_defs.h"
-#include "vgui_TeamFortressViewport.h"
+#include "vgui_viewport.h"
 #include "vgui_ControlConfigPanel.h"
 
 namespace

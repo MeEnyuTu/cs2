@@ -1,6 +1,6 @@
 /***
 *
-*	Copyright (c) 1999, 2000 Valve LLC. All rights reserved.
+*	Copyright (c) 1996-2002, Valve LLC. All rights reserved.
 *	
 *	This product contains software technology licensed from Id 
 *	Software, Inc. ("Id Technology").  Id Technology (c) 1996 Id Software, Inc. 
@@ -24,48 +24,41 @@
 #include <stdio.h>
 #include "parsemsg.h"
 #include "hud_servers.h"
-#include "vgui_TeamFortressViewport.h"
-
+#include "vgui_viewport.h"
 #include "demo.h"
 #include "demo_api.h"
-
+#include "voice_status.h"
 #include "vgui_ScorePanel.h"
 
-extern TeamFortressViewport *gViewPort;
 
-
-class CHLVoiceStatusHelper : public IVoiceStatusHelper
+class CDMCVoiceStatusHelper : public IVoiceStatusHelper
 {
 public:
-	virtual void GetPlayerTextColor(int entindex, int color[3])
+	virtual void			GetPlayerTextColor(int entindex, int color[3])
 	{
 		color[0] = color[1] = color[2] = 255;
 
-	/*	if( entindex >= 0 && entindex < sizeof(g_PlayerExtraInfo)/sizeof(g_PlayerExtraInfo[0]) )
+		if( entindex >= 0 && size_t(entindex) < sizeof(g_PlayerExtraInfo)/sizeof(g_PlayerExtraInfo[0]) )
 		{
 			int iTeam = g_PlayerExtraInfo[entindex].teamnumber;
 
-			if ( iTeam < 0 )
+			if( iTeam >= 0 && size_t(iTeam) < sizeof(iTeamColors)/sizeof(iTeamColors[0]) )
 			{
-				iTeam = 0;
+				color[0] = iTeamColors[iTeam][0];
+				color[1] = iTeamColors[iTeam][1];
+				color[2] = iTeamColors[iTeam][2];
 			}
-
-			iTeam = iTeam % iNumberOfTeamColors;
-
-			color[0] = iTeamColors[iTeam][0];
-			color[1] = iTeamColors[iTeam][1];
-			color[2] = iTeamColors[iTeam][2];
-		}*/
+		}
 	}
 
-	virtual void UpdateCursorState()
+	virtual void			UpdateCursorState()
 	{
 		gViewPort->UpdateCursorState();
 	}
 
-	virtual int	GetAckIconHeight()
+	virtual int				GetAckIconHeight()
 	{
-		return ScreenHeight - gHUD.m_iFontHeight*3 - 6;
+		return ScreenHeight - gHUD.m_iFontHeight*2 - 6;
 	}
 
 	virtual bool			CanShowSpeakerLabels()
@@ -76,12 +69,18 @@ public:
 			return false;
 	}
 };
-static CHLVoiceStatusHelper g_VoiceStatusHelper;
+static CDMCVoiceStatusHelper g_VoiceStatusHelper;
+
+
 
 extern client_sprite_t *GetSpriteList(client_sprite_t *pList, const char *psz, int iRes, int iCount);
 
 extern cvar_t *sensitivity;
 cvar_t *cl_lw = NULL;
+cvar_t *cl_autowepswitch;
+cvar_t *cl_rollspeed;
+cvar_t *cl_rollangle;
+cvar_t *cl_fov;
 
 void ShutdownInput (void);
 
@@ -126,11 +125,45 @@ int __MsgFunc_GameMode(const char *pszName, int iSize, void *pbuf )
 	return gHUD.MsgFunc_GameMode( pszName, iSize, pbuf );
 }
 
+int __MsgFunc_MOTD(const char *pszName, int iSize, void *pbuf)
+{
+	if (gViewPort)
+		return gViewPort->MsgFunc_MOTD( pszName, iSize, pbuf );
+	return 0;
+}
+
+int __MsgFunc_ServerName(const char *pszName, int iSize, void *pbuf)
+{
+	if (gViewPort)
+		return gViewPort->MsgFunc_ServerName( pszName, iSize, pbuf );
+	return 0;
+}
+
+// QUAKECLASSIC
+int __MsgFunc_QItems(const char *pszName, int iSize, void *pbuf)
+{
+	return gHUD.MsgFunc_QItems( pszName, iSize, pbuf );
+}
+
+int __MsgFunc_ScoreInfo(const char *pszName, int iSize, void *pbuf)
+{
+	if (gViewPort)
+		return gViewPort->MsgFunc_ScoreInfo( pszName, iSize, pbuf );
+	return 0;
+}
+
+int __MsgFunc_TeamInfo(const char *pszName, int iSize, void *pbuf)
+{
+	if (gViewPort)
+		return gViewPort->MsgFunc_TeamInfo( pszName, iSize, pbuf );
+	return 0;
+}
+
 void __CmdFunc_OpenCommandMenu(void)
 {
 	if ( gViewPort )
 	{
-		gViewPort->ShowCommandMenu();
+		gViewPort->ShowCommandMenu( gViewPort->m_StandardMenu );
 	}
 }
 
@@ -142,60 +175,12 @@ void __CmdFunc_CloseCommandMenu(void)
 	}
 }
 
-int __MsgFunc_StartRnd(const char *pszName, int iSize, void *pbuf)
+void __CmdFunc_ForceCloseCommandMenu( void )
 {
-	if (gViewPort)
-		return gViewPort->MsgFunc_StartRnd( pszName, iSize, pbuf );
-	return 0;
-}
-
-int __MsgFunc_EndRnd(const char *pszName, int iSize, void *pbuf)
-{
-	if (gViewPort)
-		return gViewPort->MsgFunc_EndRnd( pszName, iSize, pbuf );
-	return 0;
-}
-
-int __MsgFunc_ScoreInfo(const char *pszName, int iSize, void *pbuf)
-{
-	if (gViewPort)
-		return gViewPort->MsgFunc_ScoreInfo( pszName, iSize, pbuf );
-	return 0;
-}
-
-int __MsgFunc_TeamScore(const char *pszName, int iSize, void *pbuf)
-{
-	if (gViewPort)
-		return gViewPort->MsgFunc_TeamScore( pszName, iSize, pbuf );
-	return 0;
-}
-
-int __MsgFunc_TeamInfo(const char *pszName, int iSize, void *pbuf)
-{
-	if (gViewPort)
-		return gViewPort->MsgFunc_TeamInfo( pszName, iSize, pbuf );
-	return 0;
-}
-
-int __MsgFunc_Powerup(const char *pszName, int iSize, void *pbuf)
-{
-	if (gViewPort)
-		return gViewPort->MsgFunc_Powerup( pszName, iSize, pbuf );
-	return 0;
-}
-
-int __MsgFunc_Reward(const char *pszName, int iSize, void *pbuf)
-{
-	if (gViewPort)
-		return gViewPort->MsgFunc_Reward( pszName, iSize, pbuf );
-	return 0;
-}
-
-int __MsgFunc_Frozen(const char *pszName, int iSize, void *pbuf)
-{
-	if (gViewPort)
-		return gViewPort->MsgFunc_Frozen( pszName, iSize, pbuf );
-	return 0;
+	if ( gViewPort )
+	{
+		gViewPort->HideCommandMenu();
+	}
 }
 
 // This is called every time the DLL is loaded
@@ -208,27 +193,35 @@ void CHud :: Init( void )
 	HOOK_MESSAGE( SetFOV );
 	HOOK_MESSAGE( Concuss );
 
-	HOOK_MESSAGE( ScoreInfo );
-	HOOK_MESSAGE( TeamScore );
-	HOOK_MESSAGE( TeamInfo );
+	HOOK_MESSAGE( MOTD );
+	HOOK_MESSAGE( ServerName );
 
-	// Discwar
-	HOOK_MESSAGE( StartRnd );
-	HOOK_MESSAGE( EndRnd );
-	HOOK_MESSAGE( Powerup );
-	HOOK_MESSAGE( Reward );
-	HOOK_MESSAGE( Frozen );
+	HOOK_COMMAND( "togglebrowser", ToggleServerBrowser );
 
 	HOOK_COMMAND( "+commandmenu", OpenCommandMenu );
 	HOOK_COMMAND( "-commandmenu", CloseCommandMenu );
+	HOOK_COMMAND( "ForceCloseCommandMenu", ForceCloseCommandMenu );
+
+	// QUAKECLASSIC
+	HOOK_MESSAGE( QItems );
+	HOOK_MESSAGE( ScoreInfo );
+	//HOOK_MESSAGE( TeamScore );
+	HOOK_MESSAGE( TeamInfo );
 
 	m_iLogo = 0;
 	m_iFOV = 0;
 
 	CVAR_CREATE( "zoom_sensitivity_ratio", "1.2", 0 );
 	default_fov = CVAR_CREATE( "default_fov", "90", 0 );
-	m_pCvarStealMouse = CVAR_CREATE( "hud_capturemouse", "1", FCVAR_ARCHIVE );
 	cl_lw = gEngfuncs.pfnGetCvarPointer( "cl_lw" );
+	m_pCvarStealMouse = CVAR_CREATE( "hud_capturemouse", "1", FCVAR_ARCHIVE );
+	m_pCvarDraw = CVAR_CREATE( "hud_draw", "1", FCVAR_ARCHIVE );
+	/************************ CLIENT CVAR DEFINITIONS ************************/
+	cl_autowepswitch = gEngfuncs.pfnRegisterVariable ( "cl_autowepswitch", "2", FCVAR_USERINFO|FCVAR_ARCHIVE );
+	cl_rollangle = gEngfuncs.pfnRegisterVariable ( "cl_rollangle", "0.65", FCVAR_CLIENTDLL|FCVAR_ARCHIVE );
+	cl_rollspeed = gEngfuncs.pfnRegisterVariable ( "cl_rollspeed", "300", FCVAR_CLIENTDLL|FCVAR_ARCHIVE );
+	cl_fov = gEngfuncs.pfnRegisterVariable ( "cl_fov", "90", FCVAR_USERINFO|FCVAR_ARCHIVE );
+	/************************ CLIENT CVAR DEFINITIONS ************************/
 
 	m_pSpriteList = NULL;
 
@@ -250,25 +243,32 @@ void CHud :: Init( void )
 
 	m_Ammo.Init();
 	m_Health.Init();
+	m_SayText.Init();
+	m_Spectator.Init();
 	m_Geiger.Init();
 	m_Train.Init();
 	m_Battery.Init();
-	m_Flash.Init();
 	m_Message.Init();
+//	m_Scoreboard.Init();
+//	m_MOTD.Init();
 	m_StatusBar.Init();
 	m_DeathNotice.Init();
 	m_AmmoSecondary.Init();
 	m_TextMessage.Init();
 	m_StatusIcons.Init();
 
-	m_SayText.Init();
-	m_Menu.Init();
+	GetClientVoiceMgr()->Init(&g_VoiceStatusHelper, (vgui::Panel**)&gViewPort);
 
-	GetClientVoiceMgr()->Init(&g_VoiceStatusHelper, (vgui::Panel **)&gViewPort);
+	
+	m_Menu.Init();
 
 	ServersInit();
 
 	MsgFunc_ResetHUD(0, 0, NULL );
+}
+
+CHud::CHud() : m_pHudList(NULL), m_iSpriteCount(0)
+{
 }
 
 // CHud destructor
@@ -278,7 +278,7 @@ CHud :: ~CHud()
 	delete [] m_rghSprites;
 	delete [] m_rgrcRects;
 	delete [] m_rgszSpriteNames;
-
+	
 	if ( m_pHudList )
 	{
 		HUDLIST *pList;
@@ -397,11 +397,13 @@ void CHud :: VidInit( void )
 
 	m_Ammo.VidInit();
 	m_Health.VidInit();
+	m_Spectator.VidInit();
 	m_Geiger.VidInit();
 	m_Train.VidInit();
 	m_Battery.VidInit();
-	m_Flash.VidInit();
 	m_Message.VidInit();
+//	m_Scoreboard.VidInit();
+//	m_MOTD.VidInit();
 	m_StatusBar.VidInit();
 	m_DeathNotice.VidInit();
 	m_SayText.VidInit();
@@ -409,7 +411,7 @@ void CHud :: VidInit( void )
 	m_AmmoSecondary.VidInit();
 	m_TextMessage.VidInit();
 	m_StatusIcons.VidInit();
-	
+
 	GetClientVoiceMgr()->VidInit();
 }
 
@@ -497,7 +499,7 @@ Returns last FOV
 */
 float HUD_GetFOV( void )
 {
-/*
+	/*
 	if ( gEngfuncs.pDemoAPI->IsRecording() )
 	{
 		// Write it
@@ -515,7 +517,7 @@ float HUD_GetFOV( void )
 	{
 		g_lastFOV = g_demozoom;
 	}
-*/
+	*/
 	return g_lastFOV;
 }
 
@@ -587,3 +589,5 @@ float CHud::GetSensitivity( void )
 {
 	return m_flMouseSensitivity;
 }
+
+
